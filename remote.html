@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bamboo DJ — Remote Panel</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --panel: #111412; }
+        
+        * { box-sizing: border-box; }
+        
+        body { 
+            margin: 0; padding: 10px; 
+            background: var(--bg); 
+            color: #fff; font-family: 'Jost', sans-serif; 
+            min-height: 100vh;
+        }
+
+        /* Container Utama */
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Window-Friendly */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: linear-gradient(90deg, rgba(255,0,60,0.1), transparent);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .logo { font-family: 'Alex Brush'; font-size: 28px; color: #fff; text-shadow: 0 0 10px var(--neon); margin: 0; }
+        .status { font-size: 9px; letter-spacing: 2px; color: var(--gold); display: flex; align-items: center; gap: 8px; font-weight: 600; }
+        .led { width: 7px; height: 7px; border-radius: 50%; background: #333; }
+        .led-on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+
+        /* Dashboard Grid */
+        .main-engine {
+            display: grid;
+            grid-template-columns: 1fr 260px 1fr;
+            gap: 12px;
+        }
+
+        /* Deck Styling */
+        .deck {
+            background: var(--panel);
+            border: 1px solid rgba(201,164,104,0.1);
+            border-radius: 15px;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 400px;
+        }
+        .deck-header { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
+        .bpm-display { font-size: 45px; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 15px rgba(201,164,104,0.2); }
+        
+        .label { font-size: 9px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
+
+        /* Input Area */
+        .input-group { background: #000; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #222; }
+        input[type=text] { 
+            width: 100%; background: #111; border: 1px solid #333; color: var(--gold); 
+            padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 10px;
+        }
+        .btn-load { 
+            width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; 
+            font-weight: 800; border-radius: 6px; cursor: pointer; transition: 0.2s;
+        }
+        .btn-load:hover { filter: brightness(1.2); }
+
+        /* Mixer Center */
+        .mixer {
+            background: #080808;
+            border: 1px solid var(--neon);
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            gap: 10px;
+        }
+        .eq-strip { display: flex; flex-direction: column; align-items: center; margin: 5px 0; }
+        
+        /* EQ Sliders */
+        .fader-v { appearance: none; width: 100%; height: 4px; background: #222; border-radius: 2px; outline: none; margin: 10px 0; accent-color: var(--gold); }
+        
+        .xfader-container { width: 100%; text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; }
+        .xfader { width: 100%; height: 35px; accent-color: var(--neon); }
+
+        /* Transport */
+        .transport { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
+        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-cue { background: #222; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        @media (max-width: 1000px) {
+            .main-engine { grid-template-columns: 1fr; }
+            .mixer { width: 100%; flex-direction: row; flex-wrap: wrap; }
+            .eq-strip { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="wrapper">
+    <header>
+        <p class="logo">Bamboo Terrace</p>
+        <div class="status">
+            <span id="led" class="led"></span>
+            <span id="stat-text">XDJ-RX3 STANDBY</span>
+            <span style="margin-left: 15px; opacity: 0.4;">|</span>
+            <span style="opacity: 0.6;">WINDOW MODE ACTIVE</span>
+        </div>
+    </header>
+
+    <div class="main-engine">
+        <!-- DECK 1 -->
+        <div class="deck">
+            <div class="deck-header">
+                <span class="label">DECK 01</span>
+                <div style="text-align: right">
+                    <div class="bpm-display" id="bpmA">128.0</div>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="urlA" placeholder="Paste link YouTube A di sini...">
+                <button class="btn-load" onclick="loadV('A')">LOAD LAGU A</button>
+            </div>
+
+            <div class="transport">
+                <button class="btn-play" onclick="cmd('A','play')">PLAY</button>
+                <button class="btn-cue" onclick="cmd('A','pause')">CUE / STOP</button>
+            </div>
+        </div>
+
+        <!-- MIXER CENTER -->
+        <div class="mixer">
+            <div class="mixer-header" style="text-align:center; font-size:9px; letter-spacing:3px; color:var(--neon)">EQ CONTROL</div>
+            
+            <div class="eq-strip">
+                <span class="label">HIGH</span>
+                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})">
+            </div>
+            <div class="eq-strip">
+                <span class="label">MID</span>
+                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})">
+            </div>
+            <div class="eq-strip">
+                <span class="label">LOW</span>
+                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})">
+            </div>
+            <div class="eq-strip">
+                <span class="label" style="color:var(--neon)">V-KILL</span>
+                <input type="range" class="fader-v" min="0" max="100" value="0" oninput="send({type:'vocal', value:this.value})">
+            </div>
+            
+            <div class="xfader-container">
+                <span class="label" style="font-size: 8px">CROSSFADER</span>
+                <input type="range" class="xfader" id="xfade" min="0" max="100" value="50" oninput="updateXF(this.value)">
+            </div>
+        </div>
+
+        <!-- DECK 2 -->
+        <div class="deck">
+            <div class="deck-header">
+                <div style="text-align: left">
+                    <div class="bpm-display" id="bpmB">124.0</div>
+                </div>
+                <span class="label">DECK 02</span>
+            </div>
+            
+            <div class="input-group">
+                <input type="text" id="urlB" placeholder="Paste link YouTube B di sini...">
+                <button class="btn-load" onclick="loadV('B')">LOAD LAGU B</button>
+            </div>
+
+            <div class="transport">
+                <button class="btn-play" onclick="cmd('B','play')">PLAY</button>
+                <button class="btn-cue" onclick="cmd('B','pause')">CUE / STOP</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    const peer = new Peer();
+    let conn, playerA, playerB;
+
+    peer.on('open', () => {
+        conn = peer.connect('bamboo-terrace-bar-system');
+        conn.on('open', () => {
+            document.getElementById('led').classList.add('led-on');
+            document.getElementById('stat-text').innerText = "LINKED TO TV";
+        });
+    });
+
+    function onYouTubeIframeAPIReady() {
+        playerA = new YT.Player('pA', { height:'0', width:'0', playerVars:{ controls:0 }});
+        playerB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
+    }
+
+    // MIDI PIONEER RX3
+    if (navigator.requestMIDIAccess) {
+        navigator.requestMIDIAccess().then(access => {
+            const inputs = access.inputs.values();
+            for (let input of inputs) {
+                input.onmidimessage = (msg) => {
+                    const [s, k, v] = msg.data;
+                    if(k === 31) updateXF((v/127)*100);
+                    if(k === 11 && v === 127) { playerA.playVideo(); send({type:'cmdA', cmd:'play'}); }
+                    if(k === 12 && v === 127) { playerB.playVideo(); send({type:'cmdB', cmd:'play'}); }
+                    if(k === 26) send({type:'vocal', value:(v/127)*100});
+                };
+            }
+        });
+    }
+
+    function loadV(d) {
+        const url = document.getElementById('url'+d).value;
+        const id = url.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+        if(id) {
+            if(d === 'A') playerA.loadVideoById(id[1]); else playerB.loadVideoById(id[1]);
+            send({type: 'load'+d, id: id[1]});
+        }
+    }
+
+    function updateXF(v) {
+        document.getElementById('xfade').value = v;
+        playerA.setVolume(100 - v);
+        playerB.setVolume(v);
+        send({type:'xfade', value:v});
+    }
+
+    function cmd(d, c) { 
+        if(d === 'A') c === 'play' ? playerA.playVideo() : playerA.pauseVideo();
+        if(d === 'B') c === 'play' ? playerB.playVideo() : playerB.pauseVideo();
+        send({type: 'cmd'+d, cmd: c}); 
+    }
+
+    function send(data) { if(conn) conn.send(data); }
+</script>
+</body>
+</html>

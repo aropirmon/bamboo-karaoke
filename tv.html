@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Bamboo Terrace — Cinema Boutique</title>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@300;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --neon: #ff003c; --dark: #050705; --gold: #c9a468; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: var(--dark); overflow: hidden; cursor: none; }
+        
+        /* Layar Utama dengan Vignette (Bayangan di pinggir) */
+        #stage { 
+            position: relative; width: 100vw; height: 100vh; overflow: hidden; 
+            box-shadow: inset 0 0 150px rgba(0,0,0,1); 
+        }
+
+        /* Overscan 110% - Memotong logo Youtube secara total */
+        .deck-wrapper {
+            position: absolute; top: -5%; left: -5%; width: 110%; height: 110%;
+            transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #deckA { z-index: 2; opacity: 1; }
+        #deckB { z-index: 1; opacity: 0; }
+        iframe { width: 100%; height: 100%; border: none; filter: contrast(1.1) brightness(0.9); }
+
+        /* Elegant Neon Branding */
+        .branding {
+            position: absolute; bottom: 50px; left: 50px; z-index: 100;
+            text-align: center; pointer-events: none;
+            filter: drop-shadow(0 0 15px var(--neon));
+        }
+        .logo-text {
+            font-family: 'Alex Brush', cursive; font-size: 50px; color: #fff;
+            text-shadow: 0 0 10px #fff, 0 0 20px var(--neon), 0 0 40px var(--neon);
+            margin: 0; transition: transform 0.1s ease;
+        }
+        .bar-text {
+            font-family: 'Jost', sans-serif; font-weight: 600; font-size: 14px;
+            color: #fff; letter-spacing: 12px; margin-top: 5px; opacity: 0.9;
+        }
+
+        #setup-shield { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-start { background: none; border: 1px solid var(--neon); color: #fff; padding: 18px 60px; font-family: 'Jost'; letter-spacing: 5px; cursor: pointer; transition: 0.3s; border-radius: 2px; }
+        .btn-start:hover { background: var(--neon); box-shadow: 0 0 30px var(--neon); }
+    </style>
+</head>
+<body>
+
+<div id="setup-shield">
+    <p class="logo-text" style="font-size: 80px;">Bamboo Terrace</p>
+    <p class="bar-text" style="font-size: 24px;">BAR</p>
+    <button class="btn-start" onclick="initSystem()" style="margin-top: 50px;">INITIALIZE PRO SYSTEM</button>
+</div>
+
+<div id="stage">
+    <div class="branding">
+        <p class="logo-text" id="main-logo">Bamboo Terrace</p>
+        <p class="bar-text">BAR</p>
+    </div>
+    <div id="deckA" class="deck-wrapper"><div id="playerA"></div></div>
+    <div id="deckB" class="deck-wrapper"><div id="playerB"></div></div>
+</div>
+
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    const PEER_ID = 'bamboo-terrace-bar-system';
+    let peer = new Peer(PEER_ID), playerA, playerB;
+
+    function onYouTubeIframeAPIReady() {
+        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, rel:0, modestbranding:1, autoplay:1, mute:1, cc_load_policy:0 }};
+        playerA = new YT.Player('playerA', cfg);
+        playerB = new YT.Player('playerB', cfg);
+    }
+
+    async function initSystem() {
+        // Kita tidak butuh stream audio di TV untuk mencegah feedback
+        document.documentElement.requestFullscreen();
+        document.getElementById('setup-shield').style.display = 'none';
+    }
+
+    peer.on('connection', (conn) => {
+        conn.on('data', (d) => {
+            if(d.type === 'loadA') playerA.loadVideoById(d.id);
+            if(d.type === 'loadB') playerB.loadVideoById(d.id);
+            if(d.type === 'xfade') {
+                document.getElementById('deckA').style.opacity = (100 - d.value) / 100;
+                document.getElementById('deckB').style.opacity = d.value / 100;
+            }
+            if(d.type === 'cmdA') d.cmd === 'play' ? playerA.playVideo() : playerA.pauseVideo();
+            if(d.type === 'cmdB') d.cmd === 'play' ? playerB.playVideo() : playerB.pauseVideo();
+            if(d.type === 'rateA') playerA.setPlaybackRate(d.value);
+            if(d.type === 'rateB') playerB.setPlaybackRate(d.value);
+            // Visual pulse dari HP
+            if(d.type === 'pulse') {
+                document.getElementById('main-logo').style.transform = `scale(${1 + d.val * 0.15})`;
+            }
+        });
+    });
+</script>
+</body>
+</html>
