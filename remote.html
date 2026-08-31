@@ -2,190 +2,76 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bamboo DJ — Remote Panel</title>
+    <title>Bamboo DJ — Pro EQ & Headphone Link</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --panel: #111412; }
-        
+        :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --card: #121513; }
         * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 5px; width: 100%; height: 100%; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; overflow: hidden; }
+        .wrapper { display: flex; flex-direction: column; height: 100vh; gap: 5px; }
+
+        /* STACKED WAVEFORMS */
+        .stacked-waves { height: 90px; background: #000; border: 1px solid #333; border-radius: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; padding: 2px 0; }
+        .wave-lane { position: relative; flex: 1; overflow: hidden; background: rgba(255,255,255,0.02); }
+        .moving-grid { position: absolute; top: 0; height: 100%; width: 10000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
+        .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 30; box-shadow: 0 0 10px #fff; }
+
+        /* LAYOUT */
+        .main-engine { display: grid; grid-template-columns: 1fr 240px 1fr; gap: 8px; flex: 1; min-height: 0; }
+        .deck { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .bpm-num { font-size: 32px; font-weight: 700; color: var(--gold); }
+        .label { font-size: 8px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
+
+        /* MIXER */
+        .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 12px; display: grid; grid-template-columns: 50px 1fr 50px; padding: 5px; }
+        .fader-v { appearance: none; width: 80px; height: 3px; background: #222; transform: rotate(-90deg); margin: 35px 0; outline: none; }
+        .vol-fader { width: 110px; margin: 50px -30px !important; background: #333; }
+        .vol-fader::-webkit-slider-thumb { appearance: none; width: 25px; height: 12px; background: var(--gold); border-radius: 2px; }
         
-        body { 
-            margin: 0; padding: 10px; 
-            background: var(--bg); 
-            color: #fff; font-family: 'Jost', sans-serif; 
-            min-height: 100vh;
-        }
-
-        /* Container Utama */
-        .wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        /* Header Window-Friendly */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 20px;
-            background: linear-gradient(90deg, rgba(255,0,60,0.1), transparent);
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .logo { font-family: 'Alex Brush'; font-size: 28px; color: #fff; text-shadow: 0 0 10px var(--neon); margin: 0; }
-        .status { font-size: 9px; letter-spacing: 2px; color: var(--gold); display: flex; align-items: center; gap: 8px; font-weight: 600; }
-        .led { width: 7px; height: 7px; border-radius: 50%; background: #333; }
-        .led-on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
-
-        /* Dashboard Grid */
-        .main-engine {
-            display: grid;
-            grid-template-columns: 1fr 260px 1fr;
-            gap: 12px;
-        }
-
-        /* Deck Styling */
-        .deck {
-            background: var(--panel);
-            border: 1px solid rgba(201,164,104,0.1);
-            border-radius: 15px;
-            padding: 18px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 400px;
-        }
-        .deck-header { display: flex; justify-content: space-between; border-bottom: 1px solid #222; padding-bottom: 10px; margin-bottom: 15px; }
-        .bpm-display { font-size: 45px; font-weight: 700; color: var(--gold); line-height: 1; text-shadow: 0 0 15px rgba(201,164,104,0.2); }
-        
-        .label { font-size: 9px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; }
-
-        /* Input Area */
-        .input-group { background: #000; padding: 15px; border-radius: 12px; margin: 15px 0; border: 1px solid #222; }
-        input[type=text] { 
-            width: 100%; background: #111; border: 1px solid #333; color: var(--gold); 
-            padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 10px;
-        }
-        .btn-load { 
-            width: 100%; background: var(--gold); color: #000; border: none; padding: 12px; 
-            font-weight: 800; border-radius: 6px; cursor: pointer; transition: 0.2s;
-        }
-        .btn-load:hover { filter: brightness(1.2); }
-
-        /* Mixer Center */
-        .mixer {
-            background: #080808;
-            border: 1px solid var(--neon);
-            border-radius: 15px;
-            display: flex;
-            flex-direction: column;
-            padding: 15px;
-            gap: 10px;
-        }
-        .eq-strip { display: flex; flex-direction: column; align-items: center; margin: 5px 0; }
-        
-        /* EQ Sliders */
-        .fader-v { appearance: none; width: 100%; height: 4px; background: #222; border-radius: 2px; outline: none; margin: 10px 0; accent-color: var(--gold); }
-        
-        .xfader-container { width: 100%; text-align: center; margin-top: 15px; padding-top: 10px; border-top: 1px solid #222; }
-        .xfader { width: 100%; height: 35px; accent-color: var(--neon); }
-
-        /* Transport */
-        .transport { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; }
-        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .btn-cue { background: #222; color: #fff; border: none; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-
-        @media (max-width: 1000px) {
-            .main-engine { grid-template-columns: 1fr; }
-            .mixer { width: 100%; flex-direction: row; flex-wrap: wrap; }
-            .eq-strip { flex: 1; }
-        }
+        input[type=text] { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 8px; border-radius: 4px; font-size: 10px; }
+        .btn-load { width: 100%; background: var(--gold); color: #000; border: none; padding: 8px; font-weight: 800; border-radius: 4px; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="wrapper">
-    <header>
-        <p class="logo">Bamboo Terrace</p>
-        <div class="status">
-            <span id="led" class="led"></span>
-            <span id="stat-text">XDJ-RX3 STANDBY</span>
-            <span style="margin-left: 15px; opacity: 0.4;">|</span>
-            <span style="opacity: 0.6;">WINDOW MODE ACTIVE</span>
-        </div>
-    </header>
+    <div class="stacked-waves">
+        <div class="needle"></div>
+        <div class="wave-lane"><div id="scrollA" class="moving-grid"></div></div>
+        <div class="wave-lane"><div id="scrollB" class="moving-grid"></div></div>
+    </div>
 
     <div class="main-engine">
-        <!-- DECK 1 -->
         <div class="deck">
-            <div class="deck-header">
-                <span class="label">DECK 01</span>
-                <div style="text-align: right">
-                    <div class="bpm-display" id="bpmA">128.0</div>
-                </div>
-            </div>
-            
-            <div class="input-group">
-                <input type="text" id="urlA" placeholder="Paste link YouTube A di sini...">
-                <button class="btn-load" onclick="loadV('A')">LOAD LAGU A</button>
-            </div>
-
-            <div class="transport">
-                <button class="btn-play" onclick="cmd('A','play')">PLAY</button>
-                <button class="btn-cue" onclick="cmd('A','pause')">CUE / STOP</button>
-            </div>
+            <div style="display:flex; justify-content:space-between"><span class="label">DECK 1</span><div class="bpm-num" id="bpmA">128.0</div></div>
+            <input type="text" id="urlA" placeholder="Link YouTube A">
+            <button class="btn-load" onclick="loadV('A')">LOAD A</button>
+            <button style="background:#1a3a26; color:#4caf50; border:1px solid #4caf50; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="cmd('A','play')">PLAY</button>
         </div>
 
-        <!-- MIXER CENTER -->
         <div class="mixer">
-            <div class="mixer-header" style="text-align:center; font-size:9px; letter-spacing:3px; color:var(--neon)">EQ CONTROL</div>
-            
-            <div class="eq-strip">
-                <span class="label">HIGH</span>
-                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})">
+            <div style="border-right:1px solid #222; display:flex; flex-direction:column; align-items:center;">
+                <input type="range" class="fader-v vol-fader" id="gui-volA" min="0" max="100" value="100" oninput="updateVol('A', this.value)">
+                <div class="label" style="margin-top:55px">VOL 1</div>
             </div>
-            <div class="eq-strip">
-                <span class="label">MID</span>
-                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})">
+            <div style="display:flex; flex-direction:column; align-items:center; justify-content:space-between;">
+                <div style="text-align:center"><input type="range" class="fader-v" id="eq-hi" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})"><div class="label" style="margin-top:35px">HI</div></div>
+                <div style="text-align:center"><input type="range" class="fader-v" id="eq-mid" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})"><div class="label" style="margin-top:35px">MID</div></div>
+                <div style="text-align:center"><input type="range" class="fader-v" id="eq-low" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})"><div class="label" style="margin-top:35px">LOW</div></div>
+                <input type="range" style="width:100%; accent-color:var(--neon);" id="gui-xfade" min="0" max="100" value="50" oninput="updateVideoXF(this.value)">
             </div>
-            <div class="eq-strip">
-                <span class="label">LOW</span>
-                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})">
-            </div>
-            <div class="eq-strip">
-                <span class="label" style="color:var(--neon)">V-KILL</span>
-                <input type="range" class="fader-v" min="0" max="100" value="0" oninput="send({type:'vocal', value:this.value})">
-            </div>
-            
-            <div class="xfader-container">
-                <span class="label" style="font-size: 8px">CROSSFADER</span>
-                <input type="range" class="xfader" id="xfade" min="0" max="100" value="50" oninput="updateXF(this.value)">
+            <div style="border-left:1px solid #222; display:flex; flex-direction:column; align-items:center;">
+                <input type="range" class="fader-v vol-fader" id="gui-volB" min="0" max="100" value="100" oninput="updateVol('B', this.value)">
+                <div class="label" style="margin-top:55px">VOL 2</div>
             </div>
         </div>
 
-        <!-- DECK 2 -->
         <div class="deck">
-            <div class="deck-header">
-                <div style="text-align: left">
-                    <div class="bpm-display" id="bpmB">124.0</div>
-                </div>
-                <span class="label">DECK 02</span>
-            </div>
-            
-            <div class="input-group">
-                <input type="text" id="urlB" placeholder="Paste link YouTube B di sini...">
-                <button class="btn-load" onclick="loadV('B')">LOAD LAGU B</button>
-            </div>
-
-            <div class="transport">
-                <button class="btn-play" onclick="cmd('B','play')">PLAY</button>
-                <button class="btn-cue" onclick="cmd('B','pause')">CUE / STOP</button>
-            </div>
+            <div style="display:flex; justify-content:space-between"><div class="bpm-num" id="bpmB">124.0</div><span class="label">DECK 2</span></div>
+            <input type="text" id="urlB" placeholder="Link YouTube B">
+            <button class="btn-load" onclick="loadV('B')">LOAD B</button>
+            <button style="background:#1a3a26; color:#4caf50; border:1px solid #4caf50; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="cmd('B','play')">PLAY</button>
         </div>
     </div>
 </div>
@@ -197,56 +83,65 @@
     const peer = new Peer();
     let conn, playerA, playerB;
 
-    peer.on('open', () => {
-        conn = peer.connect('bamboo-terrace-bar-system');
-        conn.on('open', () => {
-            document.getElementById('led').classList.add('led-on');
-            document.getElementById('stat-text').innerText = "LINKED TO TV";
-        });
-    });
+    peer.on('open', () => { conn = peer.connect('bamboo-terrace-bar-system'); });
 
     function onYouTubeIframeAPIReady() {
         playerA = new YT.Player('pA', { height:'0', width:'0', playerVars:{ controls:0 }});
         playerB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
     }
 
-    // MIDI PIONEER RX3
+    // --- MIDI MAPPING PIONEER RX3 ---
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(access => {
-            const inputs = access.inputs.values();
-            for (let input of inputs) {
+            for (let input of access.inputs.values()) {
                 input.onmidimessage = (msg) => {
                     const [s, k, v] = msg.data;
-                    if(k === 31) updateXF((v/127)*100);
-                    if(k === 11 && v === 127) { playerA.playVideo(); send({type:'cmdA', cmd:'play'}); }
-                    if(k === 12 && v === 127) { playerB.playVideo(); send({type:'cmdB', cmd:'play'}); }
-                    if(k === 26) send({type:'vocal', value:(v/127)*100});
+                    
+                    // Faders & Crossfader
+                    if(k === 31) updateVideoXF((v/127)*100);
+                    if(k === 19) updateVol('A', (v/127)*100);
+                    if(k === 23) updateVol('B', (v/127)*100);
+
+                    // EQ Knobs (HI, MID, LOW) - Key standar Pioneer
+                    if(k === 7) { let val = ((v/127)*40)-20; document.getElementById('eq-hi').value = val; send({type:'high', value:val}); }
+                    if(k === 11) { let val = ((v/127)*40)-20; document.getElementById('eq-mid').value = val; send({type:'mid', value:val}); }
+                    if(k === 15) { let val = ((v/127)*40)-20; document.getElementById('eq-low').value = val; send({type:'low', value:val}); }
+
+                    // Transport
+                    if(k === 11 && v === 127) cmd('A', 'play');
+                    if(k === 12 && v === 127) cmd('B', 'play');
                 };
             }
         });
     }
 
+    function updateVideoXF(v) { document.getElementById('gui-xfade').value = v; send({type:'xfade', value:v}); }
+    
+    function updateVol(deck, v) {
+        document.getElementById('gui-vol' + deck).value = v;
+        if(deck === 'A') playerA.setVolume(v); else playerB.setVolume(v);
+    }
+
     function loadV(d) {
-        const url = document.getElementById('url'+d).value;
-        const id = url.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
+        const id = document.getElementById('url'+d).value.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
         if(id) {
             if(d === 'A') playerA.loadVideoById(id[1]); else playerB.loadVideoById(id[1]);
             send({type: 'load'+d, id: id[1]});
         }
     }
 
-    function updateXF(v) {
-        document.getElementById('xfade').value = v;
-        playerA.setVolume(100 - v);
-        playerB.setVolume(v);
-        send({type:'xfade', value:v});
-    }
-
-    function cmd(d, c) { 
+    function cmd(d, c) {
         if(d === 'A') c === 'play' ? playerA.playVideo() : playerA.pauseVideo();
         if(d === 'B') c === 'play' ? playerB.playVideo() : playerB.pauseVideo();
-        send({type: 'cmd'+d, cmd: c}); 
+        send({type: 'cmd'+d, cmd: c});
     }
+
+    setInterval(() => {
+        if(playerA && playerA.getCurrentTime) {
+            document.getElementById('scrollA').style.transform = `translateX(-${(playerA.getCurrentTime() * 60)}px)`;
+            document.getElementById('scrollB').style.transform = `translateX(-${(playerB.getCurrentTime() * 60)}px)`;
+        }
+    }, 50);
 
     function send(data) { if(conn) conn.send(data); }
 </script>
