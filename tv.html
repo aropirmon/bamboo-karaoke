@@ -8,76 +8,41 @@
     <style>
         :root { --neon: #ff003c; --dark: #050505; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; cursor: none; }
-        
-        /* Container Video yang Pas di Layar Besar */
         #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-
-        .deck-wrapper {
-            position: absolute; 
-            top: 50%; left: 50%; 
-            width: 110vw; height: 110vh; /* Overscan untuk buang logo YT */
-            transform: translate(-50%, -50%);
-            transition: opacity 1s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-        }
-        
+        .deck-wrapper { position: absolute; top: 50%; left: 50%; width: 110vw; height: 110vh; transform: translate(-50%, -50%); transition: opacity 1s ease; pointer-events: none; }
         #deckA { z-index: 2; opacity: 1; }
         #deckB { z-index: 1; opacity: 0; }
         iframe { width: 100%; height: 100%; border: none; }
-
-        /* Branding Neon Sesuai Foto */
-        .branding {
-            position: absolute; bottom: 5%; left: 5%; z-index: 100;
-            text-align: center; pointer-events: none;
-        }
-        .logo-text {
-            font-family: 'Alex Brush', cursive; font-size: clamp(30px, 5vh, 60px); color: #fff;
-            text-shadow: 0 0 10px #fff, 0 0 20px var(--neon), 0 0 40px var(--neon);
-            margin: 0; line-height: 0.9;
-        }
-        .bar-text {
-            font-family: 'Jost', sans-serif; font-weight: 600; font-size: clamp(10px, 1.5vh, 20px);
-            color: #fff; letter-spacing: 12px; margin-top: 5px; opacity: 0.9;
-        }
-
-        #setup-screen { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .btn-init { background: var(--neon); color: white; border: none; padding: 20px 60px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 20px; box-shadow: 0 0 30px var(--neon); transition: 0.3s; }
+        .branding { position: absolute; bottom: 40px; left: 40px; z-index: 100; text-align: center; }
+        .logo-text { font-family: 'Alex Brush'; font-size: 32px; color: #fff; text-shadow: 0 0 10px #fff, 0 0 20px var(--neon); margin: 0; }
+        .bar-text { font-family: 'Jost'; font-size: 10px; letter-spacing: 8px; color: #fff; margin-top: 5px; opacity: 0.8; }
+        #init-shield { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .btn-init { background: var(--neon); color: white; border: none; padding: 20px 60px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 0 20px var(--neon); }
     </style>
 </head>
 <body>
-
-<div id="setup-screen">
-    <p class="logo-text" style="font-size: 100px;">Bamboo Terrace</p>
-    <button class="btn-init" onclick="startCinema()">ACTIVATE CINEMA MODE</button>
+<div id="init-shield">
+    <p class="logo-text" style="font-size: 70px;">Bamboo Terrace</p>
+    <button class="btn-init" onclick="startSystem()">ACTIVATE CINEMA</button>
 </div>
-
 <div id="stage">
-    <div class="branding">
-        <p class="logo-text">Bamboo Terrace</p>
-        <p class="bar-text">B A R</p>
-    </div>
+    <div class="branding"><p class="logo-text">Bamboo Terrace</p><p class="bar-text">BAR</p></div>
     <div id="deckA" class="deck-wrapper"><div id="playerA"></div></div>
     <div id="deckB" class="deck-wrapper"><div id="playerB"></div></div>
 </div>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-    // ID Jaringan: bamboo-ultimate-aropirmon
-    const peer = new Peer('bamboo-ultimate-aropirmon');
+    const peer = new Peer('bamboo-terrace-aropirmon-final');
     let playerA, playerB;
 
     function onYouTubeIframeAPIReady() {
-        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1, rel:0 }};
-        playerA = new YT.Player('playerA', cfg);
-        playerB = new YT.Player('playerB', cfg);
+        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1 }};
+        playerA = new YT.Player('playerA', cfg); playerB = new YT.Player('playerB', cfg);
     }
 
-    function startCinema() {
+    function startSystem() {
         document.documentElement.requestFullscreen();
-        document.getElementById('setup-screen').style.display = 'none';
-        // Video standby (Looping Hutan Bambu/Ambience)
-        playerA.cueVideoById('C70i0ZonE_k'); 
-        playerB.cueVideoById('C70i0ZonE_k');
+        document.getElementById('init-shield').style.display = 'none';
     }
 
     peer.on('connection', (conn) => {
@@ -90,8 +55,6 @@
             }
             if(d.type === 'cmdA') d.cmd === 'play' ? playerA.playVideo() : playerA.pauseVideo();
             if(d.type === 'cmdB') d.cmd === 'play' ? playerB.playVideo() : playerB.pauseVideo();
-            if(d.type === 'rateA') playerA.setPlaybackRate(d.value);
-            if(d.type === 'rateB') playerB.setPlaybackRate(d.value);
         });
     });
 </script>
