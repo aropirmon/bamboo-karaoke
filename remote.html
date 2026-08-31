@@ -12,20 +12,29 @@
         body, html { margin: 0; padding: 5px; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; height: 100vh; overflow: hidden; }
         .wrapper { display: flex; flex-direction: column; height: 100%; gap: 5px; }
 
+        /* WAVEFORMS FIX - VIRTUAL DJ STYLE */
+        .wave-section { height: 100px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 4px; padding: 4px 0; }
+        .wave-lane { position: relative; flex: 1; overflow: hidden; background: rgba(255,255,255,0.02); }
+        .grid-container { position: absolute; inset: 0; pointer-events: none; }
+        .moving-grid { 
+            position: absolute; top: 0; left: 50%; height: 100%; width: 50000px; 
+            background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); 
+            background-size: 80px 100%; /* Lebar antar beat */
+            transform: translateX(0);
+            will-change: transform;
+        }
+        .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 20; box-shadow: 0 0 10px #fff; }
+        .lane-label { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 9px; color: var(--gold); opacity: 0.5; font-weight: bold; z-index: 15; }
+
+        /* HEADER */
         header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #111; border-radius: 10px; border: 1px solid #222; }
-        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
+        .logo { font-family: 'Alex Brush'; font-size: 26px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
         .mode-btn { background: var(--gold); color: #000; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 800; cursor: pointer; font-size: 10px; }
         .mode-btn.sw { background: #444; color: #fff; }
         .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; display: inline-block; margin-left: 5px; }
         .led.active { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-        /* WAVEFORMS */
-        .wave-section { height: 80px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
-        .wave-lane { position: relative; flex: 1; overflow: hidden; background: rgba(255,255,255,0.02); }
-        .grid { position: absolute; top: 0; height: 100%; width: 20000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
-        .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 10; box-shadow: 0 0 10px #fff; }
-
-        /* GRID SYSTEM */
+        /* MAIN DASHBOARD */
         .main-engine { display: grid; grid-template-columns: 1fr 320px 1fr; gap: 8px; flex: 1; min-height: 0; }
         @media (max-width: 850px) {
             .main-engine { display: flex; flex-direction: column; overflow-y: auto; }
@@ -37,25 +46,22 @@
         .deck { background: var(--card); border: 1px solid #222; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
         .bpm-num { font-size: 32px; font-weight: 800; color: var(--gold); }
         input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 12px; border-radius: 8px; font-size: 12px; }
-        
         .btn { width: 100%; padding: 12px; border-radius: 8px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; }
         .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; }
         .btn-stop { background: #331111; border: 1px solid #ff003c; color: #ff003c; }
 
         /* MIXER */
         .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 15px; display: grid; grid-template-columns: 60px 1fr 60px; padding: 10px; position: relative; }
-        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
+        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
         .hw-locked .shield { display: flex; }
 
         .fader-v-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .fader-v { appearance: none; width: 110px; height: 5px; background: #222; transform: rotate(-90deg); margin: 55px -30px; outline: none; }
-        .fader-v::-webkit-slider-thumb { appearance: none; width: 22px; height: 14px; background: var(--gold); border-radius: 2px; }
+        .fader-v { appearance: none; width: 120px; height: 5px; background: #222; transform: rotate(-90deg); margin: 60px -30px; outline: none; }
+        .fader-v::-webkit-slider-thumb { appearance: none; width: 25px; height: 15px; background: var(--gold); border-radius: 2px; }
         
         .eq-stack { display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 5px 0; }
         .eq-knob { width: 90px; accent-color: var(--gold); height: 4px; margin: 10px 0; }
-        
-        .xfade-box { width: 100%; text-align: center; margin-top: 15px; border-top: 1px solid #222; padding-top: 10px; }
-        .xfader { width: 90%; height: 40px; accent-color: var(--neon); }
+        .xfade { width: 90%; height: 40px; accent-color: var(--neon); margin-top: 15px; }
         .label { font-size: 8px; color: var(--gold); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
     </style>
 </head>
@@ -64,8 +70,14 @@
 <div class="wrapper hw-locked" id="ui-container">
     <div class="wave-section">
         <div class="needle"></div>
-        <div class="wave-lane"><div id="gridA" class="grid"></div></div>
-        <div class="wave-lane"><div id="gridB" class="grid"></div></div>
+        <div class="wave-lane">
+            <span class="lane-label">DECK A</span>
+            <div id="gridA" class="moving-grid"></div>
+        </div>
+        <div class="wave-lane">
+            <span class="lane-label">DECK B</span>
+            <div id="gridB" class="moving-grid"></div>
+        </div>
     </div>
 
     <header>
@@ -80,40 +92,32 @@
 
     <div class="main-engine">
         <div class="deck">
-            <div style="display:flex; justify-content:space-between"><span class="label">DECK 1</span><div class="bpm-num">128.0</div></div>
-            <input type="text" id="urlA" placeholder="Link YouTube A">
-            <button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('A')">LOAD A</button>
-            <div style="display:flex; gap:5px">
-                <button class="btn btn-play" onclick="cmd('A','play')">▶ PLAY</button>
-                <button class="btn btn-stop" onclick="cmd('A','stop')">■ STOP</button>
-            </div>
-            <button class="btn" style="background:#222; color:var(--gold); font-size:9px; margin-top:5px;" onclick="syncV('A')">SYNC VIDEO</button>
+            <div style="display:flex; justify-content:space-between"><span class="label">DECK 1</span><div class="bpm-num" id="ui-bpmA">128.0</div></div>
+            <input type="text" id="urlA" placeholder="YouTube Link A">
+            <button class="btn" style="background:var(--gold)" onclick="loadV('A')">LOAD A</button>
+            <div style="display:flex; gap:5px"><button class="btn btn-play" onclick="cmd('A','play')">▶ PLAY</button><button class="btn btn-stop" onclick="cmd('A','stop')">■ STOP</button></div>
+            <button class="btn" style="background:#222; color:var(--gold); font-size:9px" onclick="syncV('A')">SYNC VIDEO</button>
         </div>
 
         <div class="mixer">
             <div class="shield">HARDWARE CONTROL ACTIVE</div>
-            <div class="fader-v-container"><span class="label">VOL 1</span><input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="upVol('A', this.value)"></div>
-
+            <div class="fader-v-container"><span class="label">VOL 1</span><input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="upVol('A',this.value)"></div>
             <div class="eq-stack">
-                <div style="text-align:center"><span class="label">HI</span><br><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})"></div>
-                <div style="text-align:center"><span class="label">MID</span><br><input type="range" class="eq-knob" id="mi" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})"></div>
-                <div style="text-align:center"><span class="label">LOW</span><br><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})"></div>
-                <div style="text-align:center"><span class="label" style="color:var(--neon)">V-KILL</span><br><input type="range" class="eq-knob" id="vk" min="0" max="100" value="0" oninput="send({type:'vocal', value:this.value})"></div>
-                <div class="xfade-box"><input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="upXF(this.value)"></div>
+                <span class="label">HI</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="send({type:'high',value:this.value})">
+                <span class="label">MID</span><input type="range" class="eq-knob" id="mi" min="-20" max="20" value="0" oninput="send({type:'mid',value:this.value})">
+                <span class="label">LOW</span><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="send({type:'low',value:this.value})">
+                <span class="label" style="color:var(--neon)">V-KILL</span><input type="range" class="eq-knob" id="vk" min="0" max="100" value="0" oninput="send({type:'vocal',value:this.value})">
+                <input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="upXF(this.value)">
             </div>
-
-            <div class="fader-v-container"><span class="label">VOL 2</span><input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="upVol('B', this.value)"></div>
+            <div class="fader-v-container"><span class="label">VOL 2</span><input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="upVol('B',this.value)"></div>
         </div>
 
         <div class="deck">
-            <div style="display:flex; justify-content:space-between"><div class="bpm-num">124.0</div><span class="label">DECK 2</span></div>
-            <input type="text" id="urlB" placeholder="Link YouTube B">
-            <button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('B')">LOAD B</button>
-            <div style="display:flex; gap:5px">
-                <button class="btn btn-play" onclick="cmd('B','play')">▶ PLAY</button>
-                <button class="btn btn-stop" onclick="cmd('B','stop')">■ STOP</button>
-            </div>
-            <button class="btn" style="background:#222; color:var(--gold); font-size:9px; margin-top:5px;" onclick="syncV('B')">SYNC VIDEO</button>
+            <div style="display:flex; justify-content:space-between"><div class="bpm-num" id="ui-bpmB">124.0</div><span class="label">DECK 2</span></div>
+            <input type="text" id="urlB" placeholder="YouTube Link B">
+            <button class="btn" style="background:var(--gold)" onclick="loadV('B')">LOAD B</button>
+            <div style="display:flex; gap:5px"><button class="btn btn-play" onclick="cmd('B','play')">▶ PLAY</button><button class="btn btn-stop" onclick="cmd('B','stop')">■ STOP</button></div>
+            <button class="btn" style="background:#222; color:var(--gold); font-size:9px" onclick="syncV('B')">SYNC VIDEO</button>
         </div>
     </div>
 </div>
@@ -127,7 +131,7 @@
 
     peer.on('open', () => {
         conn = peer.connect('bamboo-terrace-aropirmon-final');
-        conn.on('open', () => document.getElementById('tvL').classList.add('on'));
+        conn.on('open', () => document.getElementById('tvL').classList.add('active'));
     });
 
     function toggleM() {
@@ -140,7 +144,7 @@
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(access => {
             for (let input of access.inputs.values()) {
-                document.getElementById('miL').classList.add('on');
+                document.getElementById('miL').classList.add('active');
                 input.onmidimessage = (msg) => {
                     if(mode !== 'hw') return;
                     const [s, k, v] = msg.data;
@@ -149,7 +153,6 @@
                     if(k === 23) upVol('B', (v/127)*100);
                     if(k === 11 && v === 127) cmd('A', 'play');
                     if(k === 12 && v === 127) cmd('B', 'play');
-                    // EQ MIDI
                     if(k === 7) send({type:'high', value:((v/127)*40)-20});
                     if(k === 8) send({type:'mid', value:((v/127)*40)-20});
                     if(k === 9) send({type:'low', value:((v/127)*40)-20});
@@ -164,14 +167,9 @@
     }
 
     function upXF(v) { document.getElementById('xf').value = v; send({type:'xfade', value:v}); }
-    function upVol(d, v) { 
-        if(d === 'A') playerA.setVolume(v); else playerB.setVolume(v);
-        document.getElementById('vol'+d).value = v;
-    }
-    function syncV(d) {
-        const p = (d === 'A') ? playerA : playerB;
-        if(p && p.getCurrentTime) send({type: 'sync'+d, time: p.getCurrentTime()});
-    }
+    function upVol(d, v) { if(d === 'A') playerA.setVolume(v); else playerB.setVolume(v); document.getElementById('vol'+d).value = v; }
+    function syncV(d) { const p = (d === 'A')?playerA:playerB; if(p && p.getCurrentTime) send({type:'sync'+d, time:p.getCurrentTime()}); }
+    
     function loadV(d) {
         const id = document.getElementById('url'+d).value.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
         if(id) {
@@ -179,17 +177,23 @@
             send({type: 'load'+d, id: id[1]});
         }
     }
+
     function cmd(d, c) {
         if(d === 'A') c === 'play' ? playerA.playVideo() : playerA.stopVideo();
         if(d === 'B') c === 'play' ? playerB.playVideo() : playerB.stopVideo();
         send({type: 'cmd'+d, cmd: c});
     }
+
+    // WAVEFORM ENGINE FIX
     setInterval(() => {
         if(playerA && playerA.getCurrentTime) {
-            document.getElementById('gridA').style.transform = `translateX(-${(playerA.getCurrentTime() * 60) % 1000}px)`;
-            document.getElementById('gridB').style.transform = `translateX(-${(playerB.getCurrentTime() * 60) % 1000}px)`;
+            const posA = (playerA.getCurrentTime() * 80); // 80px per detik
+            document.getElementById('gridA').style.transform = `translateX(-${posA % 4000}px)`;
+            const posB = (playerB.getCurrentTime() * 80);
+            document.getElementById('gridB').style.transform = `translateX(-${posB % 4000}px)`;
         }
     }, 50);
+
     function send(data) { if(conn && conn.open) conn.send(data); }
 </script>
 </body>
