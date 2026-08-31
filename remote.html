@@ -3,221 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bamboo DJ Remote — Ultimate</title>
+    <title>Bamboo DJ — Pro Dashboard</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --card: #121513; }
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 5px; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; height: 100vh; overflow: hidden; }
+        body, html { margin: 0; padding: 5px; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; min-height: 100vh; overflow-x: hidden; }
 
-        .container { display: flex; flex-direction: column; height: 100%; gap: 5px; }
+        .wrapper { display: flex; flex-direction: column; height: 100%; gap: 5px; }
 
-        /* STACKED WAVEFORMS (VIRTUAL DJ STYLE) */
-        .wave-box { height: 80px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; flex-shrink: 0; }
+        /* WAVEFORM */
+        .wave-box { height: 75px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; flex-shrink: 0; }
+        .grid-lane { position: relative; height: 50%; border-bottom: 1px solid #111; overflow: hidden; }
+        .moving-grid { position: absolute; top: 0; height: 100%; width: 20000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
         .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 10; box-shadow: 0 0 10px #fff; }
-        .wave-lane { position: relative; height: 50%; border-bottom: 1px solid #111; overflow: hidden; }
-        .grid-scroll { position: absolute; top: 0; height: 100%; width: 20000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
 
-        /* HEADER */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 8px 15px; background: #111; border-radius: 8px; border: 1px solid #222; }
-        .logo { font-family: 'Alex Brush'; font-size: 22px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
-        .mode-toggle { background: var(--gold); color: #000; border: none; padding: 6px 15px; border-radius: 5px; font-weight: 800; cursor: pointer; font-size: 11px; }
-        .mode-toggle.sw-active { background: #444; color: #fff; }
-        .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; display: inline-block; margin-left: 5px; }
-        .led.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #111; border-radius: 8px; border: 1px solid #222; }
+        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
+        .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; display: inline-block; }
+        .led.active { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-        /* MAIN DASHBOARD - RESPONSIVE GRID */
-        .dashboard { display: grid; grid-template-columns: 1fr 280px 1fr; gap: 8px; flex: 1; min-height: 0; }
+        /* ENGINE LAYOUT */
+        .main-engine { display: grid; grid-template-columns: 1fr 320px 1fr; gap: 8px; flex: 1; min-height: 0; }
         
         @media (max-width: 900px) {
-            .dashboard { display: flex; flex-direction: column; overflow-y: auto; }
-            .mixer { width: 100% !important; min-height: 400px; order: 2; }
-            .deck { min-height: 300px; order: 1; margin-bottom: 5px; }
+            .main-engine { display: flex; flex-direction: column; overflow-y: auto; }
+            .mixer { width: 100% !important; order: 2; padding: 20px 10px !important; }
+            .deck { min-height: 300px; order: 1; }
             .deck:last-child { order: 3; }
         }
 
-        .deck { background: var(--card); border: 1px solid #222; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
-        .bpm-display { font-size: 32px; font-weight: 800; color: var(--gold); text-align: right; }
+        .deck { background: var(--card); border: 1px solid #222; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .bpm-num { font-size: 32px; font-weight: 800; color: var(--gold); }
         
-        input[type=text] { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 5px; }
-        .btn-load { width: 100%; background: var(--gold); color: #000; border: none; padding: 10px; border-radius: 6px; font-weight: 800; cursor: pointer; }
-        
-        /* TRANSPORT BUTTONS (PLAY/STOP) */
-        .transport { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 10px; }
-        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; }
-        .btn-stop { background: #331111; border: 1px solid #ff003c; color: #ff003c; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 5px; }
+        .btn-load { width: 100%; background: var(--gold); color: #000; border: none; padding: 10px; font-weight: 800; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 15px; border-radius: 10px; font-weight: 800; cursor: pointer; width: 100%; margin-top: 10px; font-size: 16px; }
 
         /* MIXER CENTER */
-        .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 15px; display: grid; grid-template-columns: 55px 1fr 50px; padding: 10px; position: relative; }
-        .mixer-shield { position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; display: none; border-radius: 15px; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
-        .hw-mode .mixer-shield { display: flex; }
+        .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 15px; display: grid; grid-template-columns: 60px 1fr 60px; padding: 10px; position: relative; }
+        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 11px; }
+        .hw-mode .shield { display: flex; }
 
-        .fader-v-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .fader-v { appearance: none; width: 130px; height: 5px; background: #222; transform: rotate(-90deg); border-radius: 3px; outline: none; margin: 65px -40px; }
-        .fader-v::-webkit-slider-thumb { appearance: none; width: 25px; height: 15px; background: var(--gold); border-radius: 2px; cursor: pointer; }
+        /* EQUALIZER & FADERS */
+        .fader-v-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .fader-v { appearance: none; width: 120px; height: 4px; background: #333; transform: rotate(-90deg); margin: 60px -30px; outline: none; }
+        .fader-v::-webkit-slider-thumb { appearance: none; width: 25px; height: 12px; background: var(--gold); border-radius: 2px; cursor: pointer; }
         
-        .eq-center { display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 10px 0; }
-        .eq-knob { width: 80%; accent-color: var(--gold); margin: 10px 0; }
+        .eq-center { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px 0; }
+        .eq-slider { width: 100px; accent-color: var(--gold); height: 4px; margin: 10px 0; }
         
-        .xfader-area { width: 100%; text-align: center; margin-top: 20px; border-top: 1px solid #222; padding-top: 10px; }
-        .xfader { width: 90%; height: 40px; accent-color: var(--neon); cursor: pointer; }
-
-        .label { font-size: 8px; color: var(--gold); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+        .xfader-box { width: 100%; text-align: center; margin-top: 20px; border-top: 1px solid #222; padding-top: 10px; }
+        .xfader { width: 90%; height: 45px; accent-color: var(--neon); }
+        .label { font-size: 8px; color: var(--gold); font-weight: bold; letter-spacing: 1px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
-<div class="container hw-mode" id="ui-wrapper">
-    <!-- TOP STACKED WAVEFORMS -->
+<div class="wrapper hw-mode" id="ui-root">
     <div class="wave-box">
         <div class="needle"></div>
-        <div class="wave-lane"><div id="scrollA" class="grid-scroll"></div></div>
-        <div class="wave-lane"><div id="scrollB" class="grid-scroll"></div></div>
+        <div class="grid-lane"><div id="gridA" class="moving-grid"></div></div>
+        <div class="grid-lane"><div id="gridB" class="moving-grid"></div></div>
     </div>
 
     <header>
         <p class="logo">Bamboo Terrace</p>
-        <div style="display:flex; align-items:center; gap:12px;">
-            <button id="toggleBtn" class="mode-toggle" onclick="toggleControl()">MODE: PIONEER RX3</button>
-            <div style="font-size:9px">TV <div id="tvLed" class="led"></div></div>
-            <div style="font-size:9px">MIDI <div id="midiLed" class="led"></div></div>
+        <div style="display:flex; gap:12px; align-items:center;">
+            <button id="mBtn" onclick="toggleM()" style="font-size:10px; padding:6px 12px; background:var(--gold); border:none; border-radius:5px; font-weight:bold; cursor:pointer;">MODE: PIONEER RX3</button>
+            <div style="font-size:9px">TV <div id="tvL" class="led"></div> MIDI <div id="miL" class="led"></div></div>
         </div>
     </header>
 
-    <div class="dashboard">
+    <div class="main-engine">
         <!-- DECK 1 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="label">DECK 1</span>
-                <div class="bpm-display">128.0</div>
-            </div>
+            <div style="display:flex; justify-content:space-between"><span class="label">DECK 1</span><div class="bpm-num" id="bpmA">128.0</div></div>
             <div>
-                <input type="text" id="urlA" placeholder="YouTube Link Deck 1">
-                <button class="btn-load" onclick="loadTrack('A')">LOAD TO DECK 1</button>
+                <input type="text" id="urlA" placeholder="YouTube Link A">
+                <button class="btn-load" onclick="loadV('A')">LOAD LAGU 1</button>
             </div>
-            <div class="transport">
-                <button class="btn-play" onclick="control('A','play')">PLAY</button>
-                <button class="btn-stop" onclick="control('A','pause')">STOP</button>
-            </div>
+            <button class="btn-play" onclick="cmd('A','play')">▶ PLAY DECK 1</button>
         </div>
 
-        <!-- MIXER -->
+        <!-- MIXER CENTER -->
         <div class="mixer">
-            <div class="mixer-shield">PIONEER RX3 ACTIVE<br>(UI LOCKED)</div>
+            <div class="shield">PIONEER RX3 ACTIVE</div>
             
-            <!-- VOL 1 (Audio) -->
-            <div class="fader-v-wrap">
-                <span class="label">VOL 1</span>
-                <input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="changeVol('A', this.value)">
-            </div>
+            <div class="fader-v-wrap"><span class="label">VOL 1</span><input type="range" class="fader-v" id="vA" min="0" max="100" value="100" oninput="upVol('A', this.value)"></div>
 
-            <!-- EQ & XFADE (Video) -->
             <div class="eq-center">
-                <span class="label">HIGH</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})">
-                <span class="label">LOW</span><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})">
+                <div style="text-align:center"><span class="label">HI</span><br><input type="range" class="eq-slider" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})"></div>
+                <div style="text-align:center"><span class="label">MID</span><br><input type="range" class="eq-slider" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})"></div>
+                <div style="text-align:center"><span class="label">LOW</span><br><input type="range" class="eq-slider" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})"></div>
                 
-                <div class="xfader-area">
-                    <span class="label" style="color:var(--neon)">VIDEO CROSSFADER</span><br>
-                    <input type="range" class="xfader" id="crossf" min="0" max="100" value="50" oninput="changeXF(this.value)">
+                <div class="xfader-box">
+                    <span class="label" style="color:var(--neon)">VIDEO CROSSFADER</span>
+                    <input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="upXF(this.value)">
                 </div>
             </div>
 
-            <!-- VOL 2 (Audio) -->
-            <div class="fader-v-wrap">
-                <span class="label">VOL 2</span>
-                <input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="changeVol('B', this.value)">
-            </div>
+            <div class="fader-v-wrap"><span class="label">VOL 2</span><input type="range" class="fader-v" id="vB" min="0" max="100" value="100" oninput="upVol('B', this.value)"></div>
         </div>
 
         <!-- DECK 2 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="bpm-display">124.0</div>
-                <span class="label">DECK 2</span>
-            </div>
+            <div style="display:flex; justify-content:space-between"><div class="bpm-num" id="bpmB">124.0</div><span class="label">DECK 2</span></div>
             <div>
-                <input type="text" id="urlB" placeholder="YouTube Link Deck 2">
-                <button class="btn-load" onclick="loadTrack('B')">LOAD TO DECK 2</button>
+                <input type="text" id="urlB" placeholder="YouTube Link B">
+                <button class="btn-load" onclick="loadV('B')">LOAD LAGU 2</button>
             </div>
-            <div class="transport">
-                <button class="btn-play" onclick="control('B','play')">PLAY</button>
-                <button class="btn-stop" onclick="control('B','pause')">STOP</button>
-            </div>
+            <button class="btn-play" onclick="cmd('B','play')">▶ PLAY DECK 2</button>
         </div>
     </div>
 </div>
 
-<!-- Hidden Audio Engines -->
-<div style="display:none;"><div id="audioA"></div><div id="audioB"></div></div>
+<div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     const peer = new Peer();
-    let conn, pA, pB, mode = 'hw';
+    let conn, playerA, playerB, mode = 'hw';
 
-    // Koneksi ke TV
     peer.on('open', () => {
-        conn = peer.connect('bamboo-ultimate-aropirmon');
-        conn.on('open', () => document.getElementById('tvLed').classList.add('on'));
+        conn = peer.connect('bamboo-terrace-aropirmon-final');
+        conn.on('open', () => document.getElementById('tvL').classList.add('active'));
     });
 
-    // Toggle Mode Pioneer vs Smart Remote
-    function toggleControl() {
+    function toggleM() {
         mode = (mode === 'hw') ? 'sw' : 'hw';
-        document.getElementById('ui-wrapper').className = (mode === 'hw') ? 'container hw-mode' : 'container';
-        document.getElementById('toggleBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE';
-        document.getElementById('toggleBtn').classList.toggle('sw-active', mode === 'sw');
+        document.getElementById('ui-root').className = (mode === 'hw') ? 'wrapper hw-mode' : 'wrapper';
+        document.getElementById('mBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE';
+        document.getElementById('mBtn').style.background = (mode === 'hw') ? 'var(--gold)' : '#444';
     }
 
-    // MIDI Pioneer RX3 Integration
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(access => {
             for (let input of access.inputs.values()) {
-                document.getElementById('midiLed').classList.add('on');
-                input.onmidimessage = (m) => {
+                document.getElementById('miL').classList.add('active');
+                input.onmidimessage = (msg) => {
                     if(mode !== 'hw') return;
-                    const [s, k, v] = m.data;
-                    if(k === 31) changeXF((v/127)*100);    // Crossfader
-                    if(k === 19) changeVol('A', (v/127)*100); // Fader CH1
-                    if(k === 23) changeVol('B', (v/127)*100); // Fader CH2
-                    if(k === 11 && v === 127) control('A', 'play');
-                    if(k === 12 && v === 127) control('B', 'play');
+                    const [s, k, v] = msg.data;
+                    if(k === 31) upXF((v/127)*100);
+                    if(k === 19) upVol('A', (v/127)*100);
+                    if(k === 23) upVol('B', (v/127)*100);
+                    if(k === 11 && v === 127) cmd('A', 'play');
+                    if(k === 12 && v === 127) cmd('B', 'play');
+                    // Mapping EQ HI, MID, LOW (Contoh Key Pioneer standar)
+                    if(k === 7) send({type:'high', value:((v/127)*40)-20});
+                    if(k === 8) send({type:'mid', value:((v/127)*40)-20});
+                    if(k === 9) send({type:'low', value:((v/127)*40)-20});
                 };
             }
         });
     }
 
     function onYouTubeIframeAPIReady() {
-        pA = new YT.Player('audioA', { height:'0', width:'0', playerVars:{ controls:0 }});
-        pB = new YT.Player('audioB', { height:'0', width:'0', playerVars:{ controls:0 }});
+        playerA = new YT.Player('pA', { height:'0', width:'0', playerVars:{ controls:0 }});
+        playerB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
     }
 
-    function loadTrack(d) {
+    function upXF(v) { document.getElementById('xf').value = v; send({type:'xfade', value:v}); }
+    function upVol(d, v) { 
+        document.getElementById('v'+d).value = v;
+        if(d === 'A') playerA.setVolume(v); else playerB.setVolume(v);
+    }
+    
+    function loadV(d) {
         const id = document.getElementById('url'+d).value.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
         if(id) {
-            if(d === 'A') pA.loadVideoById(id[1]); else pB.loadVideoById(id[1]);
+            if(d === 'A') playerA.loadVideoById(id[1]); else playerB.loadVideoById(id[1]);
             send({type: 'load'+d, id: id[1]});
         }
     }
 
-    function control(d, c) {
-        if(d === 'A') c === 'play' ? pA.playVideo() : pA.pauseVideo();
-        if(d === 'B') c === 'play' ? pB.playVideo() : pB.pauseVideo();
+    function cmd(d, c) {
+        if(d === 'A') c === 'play' ? playerA.playVideo() : playerA.pauseVideo();
+        if(d === 'B') c === 'play' ? playerB.playVideo() : playerB.pauseVideo();
         send({type: 'cmd'+d, cmd: c});
     }
 
-    function changeXF(v) { document.getElementById('crossf').value = v; send({type:'xfade', value:v}); }
-    function changeVol(d, v) { 
-        document.getElementById('vol'+d).value = v;
-        if(d === 'A') pA.setVolume(v); else pB.setVolume(v);
-    }
-
-    // Waveform Sync
     setInterval(() => {
-        if(pA && pA.getCurrentTime) {
-            document.getElementById('scrollA').style.transform = `translateX(-${(pA.getCurrentTime() * 60)}px)`;
-            document.getElementById('scrollB').style.transform = `translateX(-${(pB.getCurrentTime() * 60)}px)`;
+        if(playerA && playerA.getCurrentTime) {
+            document.getElementById('gridA').style.transform = `translateX(-${(playerA.getCurrentTime() * 60) % 1000}px)`;
+            document.getElementById('gridB').style.transform = `translateX(-${(playerB.getCurrentTime() * 60) % 1000}px)`;
         }
     }, 50);
 
