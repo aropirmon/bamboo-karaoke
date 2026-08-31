@@ -9,21 +9,21 @@
         :root { --neon: #ff003c; --dark: #050505; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; cursor: none; }
         #stage { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
-        .deck-wrapper { position: absolute; top: 50%; left: 50%; width: 110vw; height: 110vh; transform: translate(-50%, -50%); transition: opacity 1s ease; pointer-events: none; }
+        .deck-wrapper { position: absolute; top: 50%; left: 50%; width: 115vw; height: 115vh; transform: translate(-50%, -50%); transition: opacity 1s ease; pointer-events: none; }
         #deckA { z-index: 2; opacity: 1; }
         #deckB { z-index: 1; opacity: 0; }
         iframe { width: 100%; height: 100%; border: none; }
         .branding { position: absolute; bottom: 40px; left: 40px; z-index: 100; text-align: center; }
-        .logo-text { font-family: 'Alex Brush'; font-size: 32px; color: #fff; text-shadow: 0 0 10px #fff, 0 0 20px var(--neon); margin: 0; }
-        .bar-text { font-family: 'Jost'; font-size: 10px; letter-spacing: 8px; color: #fff; margin-top: 5px; opacity: 0.8; }
+        .logo-text { font-family: 'Alex Brush'; font-size: 38px; color: #fff; text-shadow: 0 0 15px var(--neon); margin: 0; }
+        .bar-text { font-family: 'Jost'; font-size: 11px; letter-spacing: 10px; color: #fff; margin-top: 5px; text-shadow: 0 0 5px #fff; }
         #init-shield { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .btn-init { background: var(--neon); color: white; border: none; padding: 20px 60px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 0 20px var(--neon); }
     </style>
 </head>
 <body>
 <div id="init-shield">
-    <p class="logo-text" style="font-size: 70px;">Bamboo Terrace</p>
-    <button class="btn-init" onclick="startSystem()">ACTIVATE CINEMA</button>
+    <p class="logo-text" style="font-size: 80px;">Bamboo Terrace</p>
+    <button class="btn-init" onclick="initSystem()">AKTIFKAN MIXER & SHARE AUDIO</button>
 </div>
 <div id="stage">
     <div class="branding"><p class="logo-text">Bamboo Terrace</p><p class="bar-text">BAR</p></div>
@@ -33,16 +33,54 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     const peer = new Peer('bamboo-terrace-aropirmon-final');
-    let playerA, playerB;
+    let playerA, playerB, audioCtx, invR, invL, filterLow, filterMid, filterHigh;
 
     function onYouTubeIframeAPIReady() {
-        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1 }};
+        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1, cc_load_policy:0, iv_load_policy:3, rel:0 }};
         playerA = new YT.Player('playerA', cfg); playerB = new YT.Player('playerB', cfg);
     }
 
-    function startSystem() {
+    async function initSystem() {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
         document.documentElement.requestFullscreen();
         document.getElementById('init-shield').style.display = 'none';
+
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioCtx.createMediaStreamSource(stream);
+
+        // --- SETUP EQUALIZER NODES ---
+        filterLow = audioCtx.createBiquadFilter();
+        filterLow.type = 'lowshelf';
+        filterLow.frequency.value = 320;
+
+        filterMid = audioCtx.createBiquadFilter();
+        filterMid.type = 'peaking';
+        filterMid.frequency.value = 1000;
+        filterMid.Q.value = 1;
+
+        filterHigh = audioCtx.createBiquadFilter();
+        filterHigh.type = 'highshelf';
+        filterHigh.frequency.value = 3200;
+
+        // --- SETUP VOCAL KILL NODES ---
+        const splitter = audioCtx.createChannelSplitter(2);
+        const merger = audioCtx.createChannelMerger(2);
+        invR = audioCtx.createGain(); invL = audioCtx.createGain();
+        invR.gain.value = 0; invL.gain.value = 0;
+
+        // --- ROUTING AUDIO: Source -> Low -> Mid -> High -> Splitter -> Merger (with Vocal Kill) -> Speakers ---
+        source.connect(filterLow);
+        filterLow.connect(filterMid);
+        filterMid.connect(filterHigh);
+        filterHigh.connect(splitter);
+
+        splitter.connect(merger, 0, 0); 
+        splitter.connect(invR, 1); invR.connect(merger, 0, 0); // Inversi Right ke Left
+
+        splitter.connect(merger, 1, 1);
+        splitter.connect(invL, 0); invL.connect(merger, 0, 1); // Inversi Left ke Right
+
+        merger.connect(audioCtx.destination);
     }
 
     peer.on('connection', (conn) => {
@@ -53,8 +91,16 @@
                 document.getElementById('deckA').style.opacity = (100 - d.value) / 100;
                 document.getElementById('deckB').style.opacity = d.value / 100;
             }
-            if(d.type === 'cmdA') d.cmd === 'play' ? playerA.playVideo() : playerA.pauseVideo();
-            if(d.type === 'cmdB') d.cmd === 'play' ? playerB.playVideo() : playerB.pauseVideo();
+            if(d.type === 'vocal') { if(invR) { invR.gain.value = -d.value/100; invL.gain.value = -d.value/100; } }
+            if(d.type === 'low') { if(filterLow) filterLow.gain.value = d.value; }
+            if(d.type === 'mid') { if(filterMid) filterMid.gain.value = d.value; }
+            if(d.type === 'high') { if(filterHigh) filterHigh.gain.value = d.value; }
+            if(d.type === 'cmdA') d.cmd === 'play' ? playerA.playVideo() : playerA.stopVideo();
+            if(d.type === 'cmdB') d.cmd === 'play' ? playerB.playVideo() : playerB.stopVideo();
+            if(d.type === 'rateA') playerA.setPlaybackRate(d.value);
+            if(d.type === 'rateB') playerB.setPlaybackRate(d.value);
+            if(d.type === 'syncA') playerA.seekTo(d.time, true);
+            if(d.type === 'syncB') playerB.seekTo(d.time, true);
         });
     });
 </script>
