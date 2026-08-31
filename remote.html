@@ -2,109 +2,109 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Bamboo DJ — Pro Command Center</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bamboo DJ — Pro Command</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --panel: #121513; --green: #4caf50; }
+        :root { --neon: #ff003c; --gold: #c9a468; --bg: #050505; --card: #121513; }
         * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 5px; width: 100%; height: 100%; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; overflow: hidden; }
-        .wrapper { display: flex; flex-direction: column; height: 100vh; gap: 5px; }
+        body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; height: 100%; }
 
-        /* STATUS & MODE HEADER */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 5px 15px; background: #111; border-radius: 8px; border: 1px solid #222; }
-        .logo { font-family: 'Alex Brush'; font-size: 24px; text-shadow: 0 0 10px var(--neon); margin:0; }
+        .wrapper { display: flex; flex-direction: column; height: 100vh; padding: 8px; gap: 8px; }
+
+        header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px; background: #111; border-radius: 10px; border: 1px solid #222;
+        }
+        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
+
+        /* MODE SWITCHER */
+        .mode-box { display: flex; gap: 5px; background: #000; padding: 4px; border-radius: 8px; border: 1px solid var(--gold); }
+        .mode-btn { background: none; border: none; color: #888; padding: 6px 12px; font-size: 10px; font-weight: 700; cursor: pointer; border-radius: 5px; }
+        .mode-btn.active { background: var(--gold); color: #000; }
         
-        .status-badge { display: flex; align-items: center; gap: 10px; font-size: 10px; font-weight: bold; }
-        .indicator { padding: 4px 10px; border-radius: 4px; border: 1px solid #333; display: flex; align-items: center; gap: 5px; }
-        .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; }
-        .led.active { background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .led-group { display: flex; gap: 10px; font-size: 9px; align-items: center; }
+        .led { width: 7px; height: 7px; border-radius: 50%; background: #333; display: inline-block; }
+        .led.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-        .mode-toggle { background: var(--gold); color: #000; border: none; padding: 5px 15px; border-radius: 4px; font-weight: 800; cursor: pointer; font-size: 10px; }
-        .mode-toggle.software { background: #333; color: #fff; border: 1px solid var(--gold); }
+        /* ENGINE LAYOUT */
+        .main-engine { display: flex; gap: 8px; flex: 1; min-height: 0; }
+        
+        @media (max-width: 768px) {
+            .main-engine { flex-direction: column; overflow-y: auto; }
+            .mixer { width: 100% !important; height: auto !important; padding: 20px 0 !important; }
+            .deck { min-height: 300px; }
+        }
 
-        /* WAVEFORMS */
-        .stacked-waves { height: 70px; background: #000; border: 1px solid #333; border-radius: 8px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
-        .wave-lane { position: relative; flex: 1; overflow: hidden; background: rgba(255,255,255,0.02); }
-        .moving-grid { position: absolute; top: 0; height: 100%; width: 10000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; }
-        .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 30; }
-
-        /* MAIN DASHBOARD */
-        .main-engine { display: grid; grid-template-columns: 1fr 240px 1fr; gap: 8px; flex: 1; min-height: 0; }
-        .deck { background: var(--panel); border: 1px solid #222; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; }
+        .deck { flex: 1; background: var(--card); border-radius: 15px; border: 1px solid #222; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
         .bpm-num { font-size: 32px; font-weight: 700; color: var(--gold); }
-        
-        .input-box { background: #000; padding: 6px; border-radius: 6px; border: 1px solid #222; }
-        input[type=text] { width: 100%; background: #111; border: 1px solid #333; color: var(--gold); padding: 8px; border-radius: 4px; font-size: 10px; }
-        
-        .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 12px; display: grid; grid-template-columns: 50px 1fr 50px; padding: 5px; position: relative; }
-        
-        /* Disable Overlay when Hardware Mode is ON */
-        .mixer-shield { position: absolute; inset: 0; z-index: 100; display: none; background: rgba(0,0,0,0.4); border-radius: 12px; align-items: center; justify-content: center; font-size: 8px; text-align: center; color: var(--gold); }
-        .hardware-active .mixer-shield { display: flex; }
 
-        .fader-v { appearance: none; width: 80px; height: 3px; background: #222; transform: rotate(-90deg); margin: 35px 0; outline: none; }
-        .vol-fader { width: 100px; margin: 50px -30px !important; background: #333; }
-        .vol-fader::-webkit-slider-thumb { appearance: none; width: 22px; height: 12px; background: var(--gold); border-radius: 2px; }
-        .label { font-size: 8px; color: var(--gold); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-align: center; }
-        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 8px; border-radius: 6px; font-weight: 700; cursor: pointer; width: 100%; }
+        .mixer { width: 220px; background: #080808; border: 1px solid var(--neon); border-radius: 15px; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: space-around; position: relative; }
+        
+        /* SHIELD UNTUK HARDWARE MODE */
+        #mixer-shield { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 10; border-radius: 15px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 10px; color: var(--gold); display: none; }
+        .hw-active #mixer-shield { display: flex; }
+
+        .fader-v { appearance: none; width: 120px; height: 4px; background: #222; transform: rotate(-90deg); margin: 50px 0; outline: none; accent-color: var(--gold); }
+        .xfader { width: 80%; height: 40px; accent-color: var(--neon); }
+        
+        input[type=text] { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 6px; font-size: 12px; margin-bottom: 5px; }
+        .btn-load { width: 100%; background: var(--gold); border: none; padding: 10px; font-weight: 800; border-radius: 6px; cursor: pointer; }
+        .btn-play { background: #1a3a26; border: 1px solid #4caf50; color: #4caf50; padding: 12px; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<div class="wrapper" id="mainWrapper">
+<div class="wrapper" id="main-ui">
     <header>
         <p class="logo">Bamboo Terrace</p>
-        <div class="status-badge">
-            <button id="modeBtn" class="mode-toggle" onclick="toggleMode()">MODE: PIONEER RX3</button>
-            <div class="indicator">TV LINK <div id="tvLed" class="led"></div></div>
-            <div class="indicator">MIDI <div id="midiLed" class="led"></div></div>
+        <div class="mode-box">
+            <button id="btn-hw" class="mode-btn active" onclick="setMode('hw')">PIONEER RX3</button>
+            <button id="btn-sw" class="mode-btn" onclick="setMode('sw')">SMART REMOTE</button>
+        </div>
+        <div class="led-group">
+            <div>TV <div id="tvLed" class="led"></div></div>
+            <div>MIDI <div id="midiLed" class="led"></div></div>
         </div>
     </header>
-
-    <div class="stacked-waves">
-        <div class="needle"></div>
-        <div class="wave-lane"><div id="scrollA" class="moving-grid"></div></div>
-        <div class="wave-lane"><div id="scrollB" class="moving-grid"></div></div>
-    </div>
 
     <div class="main-engine">
         <!-- DECK 1 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between"><span class="label">DECK 1</span><div class="bpm-num" id="bpmA">128.0</div></div>
-            <div class="input-box">
+            <div style="display:flex; justify-content:space-between"><span style="font-size:10px; color:var(--gold)">DECK 1</span><div class="bpm-num">128.0</div></div>
+            <div>
                 <input type="text" id="urlA" placeholder="Link YouTube A">
-                <button onclick="loadV('A')" style="width:100%; background:var(--gold); border:none; padding:8px; margin-top:5px; font-weight:bold; cursor:pointer;">LOAD A</button>
+                <button class="btn-load" onclick="loadV('A')">LOAD A</button>
             </div>
-            <button class="btn-play" onclick="cmd('A','play')">PLAY A</button>
+            <button class="btn-play" onclick="cmd('A','play')">PLAY DECK A</button>
         </div>
 
         <!-- MIXER -->
-        <div class="mixer" id="mixerBoard">
-            <div class="mixer-shield">HARDWARE CONTROL ACTIVE<br>(PIONEER RX3)</div>
-            <div style="display:flex; flex-direction:column; align-items:center; border-right:1px solid #222;">
-                <input type="range" class="fader-v vol-fader" id="gui-volA" min="0" max="100" value="100" oninput="updateVol('A', this.value)">
-                <div class="label" style="margin-top:45px">VOL 1</div>
+        <div class="mixer">
+            <div id="mixer-shield">HARDWARE MODE<br>USE PIONEER RX3</div>
+            <div style="text-align:center">
+                <div style="font-size:8px; color:var(--gold)">HIGH</div>
+                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})">
             </div>
-            <div style="display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding: 5px 0;">
-                <input type="range" class="fader-v" id="gui-hi" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})"><div class="label" style="margin-top:25px">HI</div>
-                <input type="range" class="fader-v" id="gui-low" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})"><div class="label" style="margin-top:25px">LOW</div>
-                <input type="range" style="width:100%; accent-color:var(--neon);" id="gui-xfade" min="0" max="100" value="50" oninput="updateVideoXF(this.value)">
+            <div style="text-align:center">
+                <div style="font-size:8px; color:var(--gold)">LOW</div>
+                <input type="range" class="fader-v" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})">
             </div>
-            <div style="display:flex; flex-direction:column; align-items:center; border-left:1px solid #222;">
-                <input type="range" class="fader-v vol-fader" id="gui-volB" min="0" max="100" value="100" oninput="updateVol('B', this.value)">
-                <div class="label" style="margin-top:45px">VOL 2</div>
+            <div style="width:100%; text-align:center;">
+                <div style="font-size:8px; color:var(--neon)">CROSSFADE VIDEO</div>
+                <input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="updateXF(this.value)">
             </div>
         </div>
 
         <!-- DECK 2 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between"><div class="bpm-num" id="bpmB">124.0</div><span class="label">DECK 2</span></div>
-            <div class="input-box">
+            <div style="display:flex; justify-content:space-between"><div class="bpm-num">124.0</div><span style="font-size:10px; color:var(--gold)">DECK 2</span></div>
+            <div>
                 <input type="text" id="urlB" placeholder="Link YouTube B">
-                <button onclick="loadV('B')" style="width:100%; background:var(--gold); border:none; padding:8px; margin-top:5px; font-weight:bold; cursor:pointer;">LOAD B</button>
+                <button class="btn-load" onclick="loadV('B')">LOAD B</button>
             </div>
-            <button class="btn-play" onclick="cmd('B','play')">PLAY B</button>
+            <button class="btn-play" onclick="cmd('B','play')">PLAY DECK B</button>
         </div>
     </div>
 </div>
@@ -114,39 +114,30 @@
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     const peer = new Peer();
-    let conn, playerA, playerB, isHardwareMode = true;
+    let conn, playerA, playerB, mode = 'hw';
 
-    peer.on('open', () => { 
-        conn = peer.connect('bamboo-terrace-bar-system'); 
-        conn.on('open', () => { document.getElementById('tvLed').classList.add('active'); });
+    // KONEKSI KE TV
+    peer.on('open', () => {
+        conn = peer.connect('bamboo-terrace-aropirmon-88');
+        conn.on('open', () => { document.getElementById('tvLed').classList.add('on'); });
     });
 
-    function toggleMode() {
-        isHardwareMode = !isHardwareMode;
-        const btn = document.getElementById('modeBtn');
-        const mixer = document.getElementById('mainWrapper');
-        if(isHardwareMode) {
-            btn.innerText = "MODE: PIONEER RX3";
-            btn.classList.remove('software');
-            mixer.classList.add('hardware-active');
-        } else {
-            btn.innerText = "MODE: SMART REMOTE";
-            btn.classList.add('software');
-            mixer.classList.remove('hardware-active');
-        }
+    function setMode(m) {
+        mode = m;
+        document.getElementById('btn-hw').classList.toggle('active', m === 'hw');
+        document.getElementById('btn-sw').classList.toggle('active', m === 'sw');
+        document.getElementById('main-ui').classList.toggle('hw-active', m === 'hw');
     }
 
-    // MIDI RX3
+    // MIDI PIONEER RX3
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(access => {
             for (let input of access.inputs.values()) {
-                document.getElementById('midiLed').classList.add('active');
+                document.getElementById('midiLed').classList.add('on');
                 input.onmidimessage = (msg) => {
-                    if(!isHardwareMode) return;
+                    if(mode !== 'hw') return;
                     const [s, k, v] = msg.data;
-                    if(k === 31) updateVideoXF((v/127)*100);
-                    if(k === 19) updateVol('A', (v/127)*100);
-                    if(k === 23) updateVol('B', (v/127)*100);
+                    if(k === 31) updateXF((v/127)*100);
                     if(k === 11 && v === 127) cmd('A', 'play');
                     if(k === 12 && v === 127) cmd('B', 'play');
                 };
@@ -159,12 +150,8 @@
         playerB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
     }
 
-    function updateVideoXF(v) { document.getElementById('gui-xfade').value = v; send({type:'xfade', value:v}); }
-    function updateVol(deck, v) { 
-        document.getElementById('gui-vol' + deck).value = v;
-        if(deck === 'A') playerA.setVolume(v); else playerB.setVolume(v);
-    }
-
+    function updateXF(v) { document.getElementById('xf').value = v; send({type:'xfade', value:v}); }
+    
     function loadV(d) {
         const id = document.getElementById('url'+d).value.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
         if(id) {
@@ -179,17 +166,10 @@
         send({type: 'cmd'+d, cmd: c});
     }
 
-    setInterval(() => {
-        if(playerA && playerA.getCurrentTime) {
-            document.getElementById('scrollA').style.transform = `translateX(-${(playerA.getCurrentTime() * 60)}px)`;
-            document.getElementById('scrollB').style.transform = `translateX(-${(playerB.getCurrentTime() * 60)}px)`;
-        }
-    }, 50);
+    function send(data) { if(conn && conn.open) conn.send(data); }
 
-    function send(data) { if(conn) conn.send(data); }
-    
-    // Inisialisasi awal
-    window.onload = () => { document.getElementById('mainWrapper').classList.add('hardware-active'); };
+    // Jalankan Mode Hardware di awal
+    setMode('hw');
 </script>
 </body>
 </html>
