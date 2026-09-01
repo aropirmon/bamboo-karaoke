@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bamboo DJ — Remote Pro</title>
+    <title>Bamboo DJ — Pro Command Center</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -12,158 +12,113 @@
         body, html { margin: 0; padding: 5px; background: var(--bg); color: #fff; font-family: 'Jost', sans-serif; height: 100vh; overflow: hidden; }
         .wrapper { display: flex; flex-direction: column; height: 100%; gap: 5px; }
 
-        /* HEADER */
-        header { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #111; border-radius: 8px; border: 1px solid #222; }
-        .logo { font-family: 'Alex Brush'; font-size: 26px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
-        .mode-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: 800; cursor: pointer; font-size: 10px; }
-        .mode-btn.sw { background: #444; color: #fff; }
+        header { display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #111; border-radius: 8px; border: 1px solid #222; }
+        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); }
         .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; display: inline-block; margin-left: 5px; }
         .led.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
-        /* WAVEFORMS */
         .wave-section { height: 80px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
         .wave-lane { position: relative; flex: 1; overflow: hidden; }
         .grid { position: absolute; top: 0; height: 100%; width: 20000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
         .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 10; }
 
-        /* DASHBOARD GRID */
-        .main-engine { display: grid; grid-template-columns: 1fr 300px 1fr; gap: 8px; flex: 1; min-height: 0; }
-        
-        @media (max-width: 850px) {
-            .main-engine { display: flex; flex-direction: column; overflow-y: auto; }
-            .mixer { width: 100% !important; min-height: 480px; order: 2; margin: 10px 0; }
-            .deck { min-height: 320px; }
-        }
-
+        .main-engine { display: grid; grid-template-columns: 1fr 320px 1fr; gap: 8px; flex: 1; min-height: 0; }
         .deck { background: var(--card); border: 1px solid #222; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
         .bpm-num { font-size: 32px; font-weight: 800; color: var(--gold); }
         .rem-time { font-family: monospace; font-size: 16px; color: var(--neon); background: #000; padding: 4px 8px; border-radius: 4px; border: 1px solid #333; }
-
         input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 8px; font-size: 11px; }
         .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 11px; }
         .btn-play { background: #1a3a26; color: #4caf50; border: 1px solid #4caf50; }
         .btn-stop { background: #331111; color: #ff003c; border: 1px solid #ff003c; }
 
-        /* MIXER */
         .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 15px; display: grid; grid-template-columns: 60px 1fr 60px; padding: 10px; position: relative; }
-        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
-        .hw-locked .shield { display: flex; }
-
         .fader-v-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .fader-v { appearance: none; width: 120px; height: 4px; background: #222; transform: rotate(-90deg); margin: 60px -30px; outline: none; }
+        .fader-v { appearance: none; width: 120px; height: 5px; background: #222; transform: rotate(-90deg); margin: 60px -30px; outline: none; }
         .fader-v::-webkit-slider-thumb { appearance: none; width: 25px; height: 15px; background: var(--gold); border-radius: 2px; }
-        
         .eq-stack { display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 5px 0; }
         .eq-knob { width: 90px; accent-color: var(--gold); height: 4px; margin: 10px 0; }
         .xfade { width: 90%; height: 40px; accent-color: var(--neon); margin-top: 15px; }
         .label { font-size: 8px; color: var(--gold); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+        
+        #audio-init { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
+<div id="audio-init">
+    <p class="logo" style="font-size: 60px;">Bamboo Remote</p>
+    <button class="btn" style="background:var(--gold); width: 300px;" onclick="initAudio()">START REMOTE & AUDIO MIXER</button>
+    <p style="font-size: 10px; margin-top: 10px; color: var(--gold);">Pilih 'Tab Ini' & centang 'Bagikan Audio' agar EQ Berfungsi</p>
+</div>
+
 <div class="wrapper hw-locked" id="ui-container">
-    <div class="wave-section">
-        <div class="needle"></div>
-        <div class="wave-lane"><div id="gridA" class="grid"></div></div>
-        <div class="wave-lane"><div id="gridB" class="grid"></div></div>
-    </div>
-
-    <header>
-        <p class="logo">Bamboo Terrace</p>
-        <div class="mode-box">
-            <button id="mBtn" class="mode-btn" onclick="toggleM()">MODE: PIONEER RX3</button>
-            <div style="font-size:9px; margin-left:10px;">TV STATUS <div id="tvL" class="led"></div></div>
-        </div>
-    </header>
-
+    <div class="wave-section"><div class="needle"></div><div class="wave-lane"><div id="gridA" class="grid"></div></div><div class="wave-lane"><div id="gridB" class="grid"></div></div></div>
+    <header><p class="logo">Bamboo Terrace</p><div class="mode-box"><button id="mBtn" class="mode-btn" onclick="toggleM()" style="background:#444; color:white;">MODE: SMART REMOTE</button><div style="font-size:9px; margin-left:10px;">TV STATUS <div id="tvL" class="led"></div></div></div></header>
     <div class="main-engine">
-        <!-- DECK 1 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <span class="label">DECK 1</span>
-                <div class="rem-time" id="remA">-00:00</div>
-                <div class="bpm-num">128.0</div>
-            </div>
-            <div>
-                <input type="text" id="urlA" placeholder="Link YouTube A">
-                <button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('A')">LOAD A</button>
-            </div>
-            <div style="display:flex; gap:5px">
-                <button class="btn btn-play" onclick="cmd('A','play')">▶ PLAY</button>
-                <button class="btn btn-stop" onclick="cmd('A','stop')">■ STOP</button>
-            </div>
-            <button class="btn" style="background:#222; color:var(--gold); font-size:9px; margin-top:5px;" onclick="syncV('A')">SYNC VIDEO</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><span class="label">DECK 1</span><div class="rem-time" id="remA">-00:00</div><div class="bpm-num">128.0</div></div>
+            <div><input type="text" id="urlA" placeholder="Link YouTube A"><button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('A')">LOAD A</button></div>
+            <div style="display:flex; gap:5px"><button class="btn btn-play" onclick="cmd('A','play')">▶ PLAY</button><button class="btn btn-stop" onclick="cmd('A','stop')">■ STOP</button></div>
+            <div style="display:flex; gap:5px"><button class="btn" style="background:#222; color:var(--gold); font-size:9px; flex:1;" onclick="syncV('A')">SYNC VIDEO</button><button id="ccA" class="btn" style="background:#222; color:white; flex:1; font-size:9px;" onclick="toggleCC('A')">CC OFF</button></div>
         </div>
-
-        <!-- MIXER -->
         <div class="mixer">
-            <div class="shield">HARDWARE CONTROL ACTIVE</div>
             <div class="fader-v-container"><span class="label">VOL 1</span><input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="upVol('A', this.value)"></div>
             <div class="eq-stack">
-                <span class="label">HI</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="send({type:'high', value:this.value})">
-                <span class="label">MID</span><input type="range" class="eq-knob" id="mi" min="-20" max="20" value="0" oninput="send({type:'mid', value:this.value})">
-                <span class="label">LOW</span><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="send({type:'low', value:this.value})">
+                <span class="label">HI</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="setEQ('hi', this.value)">
+                <span class="label">MID</span><input type="range" class="eq-knob" id="mi" min="-20" max="20" value="0" oninput="setEQ('mid', this.value)">
+                <span class="label">LOW</span><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="setEQ('low', this.value)">
+                <span class="label" style="color:var(--neon)">V-KILL</span><input type="range" class="eq-knob" id="vk" min="0" max="100" value="0" oninput="setEQ('vocal', this.value)">
                 <input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="upXF(this.value)">
             </div>
             <div class="fader-v-container"><span class="label">VOL 2</span><input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="upVol('B', this.value)"></div>
         </div>
-
-        <!-- DECK 2 -->
         <div class="deck">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <div class="bpm-num">124.0</div>
-                <div class="rem-time" id="remB">-00:00</div>
-                <span class="label">DECK 2</span>
-            </div>
-            <div>
-                <input type="text" id="urlB" placeholder="Link YouTube B">
-                <button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('B')">LOAD B</button>
-            </div>
-            <div style="display:flex; gap:5px">
-                <button class="btn btn-play" onclick="cmd('B','play')">▶ PLAY</button>
-                <button class="btn btn-stop" onclick="cmd('B','stop')">■ STOP</button>
-            </div>
-            <button class="btn" style="background:#222; color:var(--gold); font-size:9px; margin-top:5px;" onclick="syncV('B')">SYNC VIDEO</button>
+            <div style="display:flex; justify-content:space-between; align-items:center;"><div class="bpm-num">124.0</div><div class="rem-time" id="remB">-00:00</div><span class="label">DECK 2</span></div>
+            <div><input type="text" id="urlB" placeholder="Link YouTube B"><button class="btn" style="background:var(--gold); margin-top:5px;" onclick="loadV('B')">LOAD B</button></div>
+            <div style="display:flex; gap:5px"><button class="btn btn-play" onclick="cmd('B','play')">▶ PLAY</button><button class="btn btn-stop" onclick="cmd('B','stop')">■ STOP</button></div>
+            <div style="display:flex; gap:5px"><button class="btn" style="background:#222; color:var(--gold); font-size:9px; flex:1;" onclick="syncV('B')">SYNC VIDEO</button><button id="ccB" class="btn" style="background:#222; color:white; flex:1; font-size:9px;" onclick="toggleCC('B')">CC OFF</button></div>
         </div>
     </div>
 </div>
-
 <div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     const peer = new Peer();
-    let conn, pA, pB, mode = 'hw';
+    let conn, pA, pB, mode = 'sw';
+    let audioCtx, invR, invL, lowF, midF, hiF;
     const TARGET = 'bamboo-terrace-aropirmon-final';
 
-    function tryConnect() {
+    peer.on('open', () => {
         conn = peer.connect(TARGET);
         conn.on('open', () => document.getElementById('tvL').className = 'led on');
-        conn.on('close', () => { document.getElementById('tvL').className = 'led'; setTimeout(tryConnect, 3000); });
-    }
-    peer.on('open', tryConnect);
+    });
 
-    function toggleM() {
-        mode = (mode === 'hw') ? 'sw' : 'hw';
-        document.getElementById('ui-container').className = (mode === 'hw') ? 'wrapper hw-locked' : 'wrapper';
-        document.getElementById('mBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE';
-        document.getElementById('mBtn').className = (mode === 'hw') ? 'mode-btn' : 'mode-btn sw';
+    async function initAudio() {
+        try {
+            const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
+            document.getElementById('audio-init').style.display = 'none';
+            audioCtx = new AudioContext();
+            const source = audioCtx.createMediaStreamSource(stream);
+            lowF = audioCtx.createBiquadFilter(); lowF.type = 'lowshelf'; lowF.frequency.value = 320;
+            midF = audioCtx.createBiquadFilter(); midF.type = 'peaking'; midF.frequency.value = 1000;
+            hiF = audioCtx.createBiquadFilter(); hiF.type = 'highshelf'; hiF.frequency.value = 3200;
+            const splitter = audioCtx.createChannelSplitter(2);
+            const merger = audioCtx.createChannelMerger(2);
+            invR = audioCtx.createGain(); invL = audioCtx.createGain();
+            invR.gain.value = 0; invL.gain.value = 0;
+            source.connect(lowF); lowF.connect(midF); midF.connect(hiF); hiF.connect(splitter);
+            splitter.connect(merger, 0, 0); splitter.connect(invR, 1); invR.connect(merger, 0, 0);
+            splitter.connect(merger, 1, 1); splitter.connect(invL, 0); invL.connect(merger, 0, 1);
+            merger.connect(audioCtx.destination);
+        } catch(e) { alert("Wajib share audio tab agar Mixer aktif!"); }
     }
 
-    if (navigator.requestMIDIAccess) {
-        navigator.requestMIDIAccess().then(access => {
-            for (let input of access.inputs.values()) {
-                input.onmidimessage = (msg) => {
-                    if(mode !== 'hw') return;
-                    const [s, k, v] = msg.data;
-                    if(k === 31) upXF((v/127)*100);
-                    if(k === 19) upVol('A', (v/127)*100);
-                    if(k === 23) upVol('B', (v/127)*100);
-                    if(k === 11 && v === 127) cmd('A', 'play');
-                    if(k === 12 && v === 127) cmd('B', 'play');
-                };
-            }
-        });
+    function setEQ(type, val) {
+        if(!lowF) return;
+        if(type === 'low') lowF.gain.value = val;
+        if(type === 'mid') midF.gain.value = val;
+        if(type === 'high') hiF.gain.value = val;
+        if(type === 'vocal') { invR.gain.value = -val/100; invL.gain.value = -val/100; }
     }
 
     function onYouTubeIframeAPIReady() {
@@ -182,12 +137,12 @@
         if(d === 'A') c==='play'?pA.playVideo():pA.stopVideo(); else c==='play'?pB.playVideo():pB.stopVideo();
         send({type: 'cmd'+d, cmd: c});
     }
-
-    function formatT(s) {
-        const m = Math.floor(s/60); const sec = Math.floor(s%60);
-        return m + ":" + (sec < 10 ? '0' : '') + sec;
+    function toggleM() {
+        mode = (mode === 'sw') ? 'hw' : 'sw';
+        document.getElementById('ui-container').className = (mode === 'hw') ? 'wrapper hw-mode' : 'wrapper';
+        document.getElementById('mBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE';
     }
-
+    function formatT(s) { const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ":" + (sec < 10 ? '0' : '') + sec; }
     setInterval(() => {
         if(pA && pA.getCurrentTime) {
             const durA = pA.getDuration(); const curA = pA.getCurrentTime();
@@ -200,7 +155,6 @@
             document.getElementById('gridB').style.transform = `translateX(-${(curB*60)%1000}px)`;
         }
     }, 100);
-
     function send(data) { if(conn && conn.open) conn.send(data); }
 </script>
 </body>
