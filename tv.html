@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Bamboo Terrace Cinema — 100" Pro</title>
+    <title>Bamboo Terrace Cinema — Display</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@300;600&display=swap" rel="stylesheet">
     <style>
@@ -14,37 +14,56 @@
         .branding { position: absolute; bottom: 40px; left: 40px; z-index: 100; text-align: center; pointer-events: none; }
         .logo-text { font-family: 'Alex Brush'; font-size: 38px; color: #fff; text-shadow: 0 0 15px var(--neon); margin: 0; }
         .bar-text { font-family: 'Jost'; font-size: 11px; letter-spacing: 10px; color: #fff; margin-top: 5px; opacity: 0.8; }
-        #init { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
-        .btn-cinema { background: var(--neon); color: white; border: none; padding: 20px 60px; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 0 20px var(--neon); }
+        #init { position: fixed; inset: 0; background: var(--dark); z-index: 999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Jost'; }
+        .btn-ready { background: var(--neon); color: white; border: none; padding: 15px 40px; border-radius: 50px; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px var(--neon); }
     </style>
 </head>
 <body>
 <div id="init">
     <p class="logo-text" style="font-size: 80px;">Bamboo Terrace</p>
-    <button class="btn-cinema" onclick="start()">ACTIVATE CINEMA</button>
+    <p id="net-stat" style="font-size:10px; letter-spacing:2px; margin: 20px 0;">MENGHUBUNGKAN...</p>
+    <button id="sBtn" class="btn-ready" style="display:none;" onclick="start()">ACTIVATE CINEMA</button>
 </div>
 <div id="stage">
-    <div class="branding"><p class="logo-text">Bamboo Terrace</p><p class="bar-text">BAR</p></div>
+    <div class="branding"><p class="logo-text">Bamboo Terrace</p><p class="bar-text">BAR</p><p id="connStat" style="font-family:'Jost'; font-size:9px; letter-spacing:3px; color:#ff003c; margin-top:6px; opacity:0.9;">● TERPUTUS</p></div>
     <div id="deckA" class="deck-wrapper"><div id="playerA"></div></div>
     <div id="deckB" class="deck-wrapper"><div id="playerB"></div></div>
 </div>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
-    const peer = new Peer('bamboo-terrace-aropirmon-final');
+    const peer = new Peer('bamboo-terrace-v10-aropirmon');
     let playerA, playerB;
 
+    peer.on('open', () => {
+        document.getElementById('net-stat').innerText = "JARINGAN AKTIF. SIAP TERHUBUNG.";
+        document.getElementById('sBtn').style.display = 'block';
+    });
+
     function onYouTubeIframeAPIReady() {
-        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1, cc_load_policy:0, iv_load_policy:3, rel:0, showinfo:0 }};
+        const cfg = { height:'100%', width:'100%', playerVars:{ controls:0, disablekb:1, modestbranding:1, autoplay:1, mute:1, cc_load_policy:0, iv_load_policy:3, rel:0 }};
         playerA = new YT.Player('playerA', cfg); playerB = new YT.Player('playerB', cfg);
     }
 
-    function start() { 
-        document.documentElement.requestFullscreen(); 
-        document.getElementById('init').style.display='none'; 
-        document.getElementById('deckA').style.opacity=1; 
-    }
+    function start() { document.documentElement.requestFullscreen(); document.getElementById('init').style.display='none'; document.getElementById('deckA').style.opacity=1; }
+
+    let activeConn = null;
+    const connStatEl = () => document.getElementById('connStat');
 
     peer.on('connection', (conn) => {
+        activeConn = conn;
+        conn.on('open', () => {
+            connStatEl().innerText = '● TERHUBUNG';
+            connStatEl().style.color = '#4caf50';
+        });
+        conn.on('close', () => {
+            connStatEl().innerText = '● TERPUTUS';
+            connStatEl().style.color = '#ff003c';
+            if (activeConn === conn) activeConn = null;
+        });
+        conn.on('error', () => {
+            connStatEl().innerText = '● TERPUTUS';
+            connStatEl().style.color = '#ff003c';
+        });
         conn.on('data', (d) => {
             if(d.type === 'loadA') playerA.loadVideoById(d.id);
             if(d.type === 'loadB') playerB.loadVideoById(d.id);
