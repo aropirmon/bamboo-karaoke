@@ -89,11 +89,10 @@
         </div>
     </div>
 </div>
-<div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
-<script src="https://www.youtube.com/iframe_api"></script>
+
 <script>
     const peer = new Peer();
-    let conn, pA, pB, mode = 'hw', audioCtx, lowF, midF, hiF, invR, invL;
+    let conn, pA, pB, playerWin, mode = 'hw', audioCtx, lowF, midF, hiF, invR, invL;
     let ccOnA = false, ccOnB = false;
     const TARGET = 'bamboo-terrace-v10-aropirmon';
 
@@ -115,31 +114,53 @@
 
     async function startAudio() {
         try {
+            // Buka tab terpisah yang berisi player YouTube (sumber audio).
+            // Ini WAJIB dipisah dari tab mixer ini: kalau kita capture tab
+            // mixer sendiri (self-capture) sambil suppressLocalAudioPlayback
+            // aktif, Chrome membungkam SEMUA audio dari tab itu -- termasuk
+            // audio hasil olahan EQ/V-KILL yang kita coba keluarkan. Dengan
+            // memisah, hanya tab sumber yang dibungkam; tab mixer ini bebas
+            // mengeluarkan audio olahannya sendiri.
+            if (!playerWin || playerWin.closed) {
+                playerWin = window.open('player.html', 'bambooPlayer');
+            }
+            if (!playerWin) {
+                alert("Popup diblokir browser. Izinkan pop-up untuk halaman ini lalu klik tombol ini lagi.");
+                return;
+            }
+            await new Promise((resolve) => {
+                const check = setInterval(() => {
+                    if (playerWin.ytReady) { clearInterval(check); resolve(); }
+                }, 200);
+            });
+            pA = playerWin.pA;
+            pB = playerWin.pB;
+
+            alert("Sebentar lagi akan muncul jendela pilih tab.\nPILIH TAB 'Bamboo Player' (BUKAN tab mixer ini), lalu centang 'Bagikan audio tab'.");
+
             const supported = navigator.mediaDevices.getSupportedConstraints();
             const displayMediaOptions = {
                 video: { displaySurface: 'browser' },
-                preferCurrentTab: true,
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
                     autoGainControl: false
                 }
             };
-            // Ini kuncinya: tanpa suppressLocalAudioPlayback, audio asli dari tab
-            // tetap keluar langsung ke speaker BERBARENGAN dengan audio yang sudah
-            // diproses EQ/V-KILL — jadi efeknya seperti tidak berfungsi (tertimpa
-            // suara asli yang belum diproses).
             if (supported.suppressLocalAudioPlayback) {
                 displayMediaOptions.audio.suppressLocalAudioPlayback = true;
             }
             const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
 
-            const suppressed = stream.getAudioTracks()[0] &&
-                stream.getAudioTracks()[0].getSettings().suppressLocalAudioPlayback;
-            if (!suppressed) {
-                alert("PERINGATAN: Browser ini tidak mendukung peredam audio asli.\nAnda akan dengar audio asli DAN audio olahan EQ bersamaan (dobel). Gunakan Chrome versi terbaru dan pastikan memilih 'Tab Ini' (bukan Jendela/Layar) saat berbagi.");
+            if (stream.getAudioTracks().length === 0) {
+                alert("Tidak ada audio yang terbagikan. Pastikan centang 'Bagikan audio tab' saat memilih tab Bamboo Player.");
+                return;
             }
-            // Video capture tidak dipakai sama sekali, matikan agar hemat resource
+            const suppressed = stream.getAudioTracks()[0].getSettings().suppressLocalAudioPlayback;
+            if (!suppressed) {
+                alert("PERINGATAN: browser ini tidak mendukung/menerapkan peredam audio asli.\nAnda mungkin dengar audio asli dari tab Bamboo Player DAN audio olahan EQ bersamaan (dobel). Gunakan Chrome versi terbaru, dan pastikan yang dipilih adalah TAB, bukan Jendela/Layar.");
+            }
+            // Video capture tidak dipakai, matikan agar hemat resource
             stream.getVideoTracks().forEach(t => t.stop());
 
             document.getElementById('audio-init').style.display = 'none';
@@ -176,10 +197,8 @@
         if(type === 'vocal') { invR.gain.value = -val/100; invL.gain.value = -val/100; }
     }
 
-    function onYouTubeIframeAPIReady() {
-        pA = new YT.Player('pA', { height:'0', width:'0', playerVars:{ controls:0 }});
-        pB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
-    }
+    // Player YouTube sekarang hidup di tab terpisah (player.html),
+    // dirujuk lewat playerWin.pA / playerWin.pB setelah startAudio().
 
     if (navigator.requestMIDIAccess) {
         navigator.requestMIDIAccess().then(access => {
@@ -201,13 +220,15 @@
     }
 
     function upXF(v) { send({type:'xfade', value:v}); }
-    function upVol(d, v) { if(d === 'A') pA.setVolume(v); else pB.setVolume(v); }
-    function syncV(d) { const p = (d === 'A')?pA:pB; if(p && p.getCurrentTime) send({type: 'sync'+d, time: p.getCurrentTime()}); }
+    function upVol(d, v) { if(!pA || !pB) return; if(d === 'A') pA.setVolume(v); else pB.setVolume(v); }
+    function syncV(d) { if(!pA || !pB) return; const p = (d === 'A')?pA:pB; if(p && p.getCurrentTime) send({type: 'sync'+d, time: p.getCurrentTime()}); }
     function loadV(d) {
+        if(!pA || !pB) { alert("Klik dulu 'INITIALIZE AUDIO & MIXER' di atas."); return; }
         const id = document.getElementById('url'+d).value.match(/(?:v=|\.be\/|embed\/)([A-Za-z0-9_-]{11})/);
         if(id) { if(d === 'A') pA.loadVideoById(id[1]); else pB.loadVideoById(id[1]); send({type: 'load'+d, id: id[1]}); }
     }
     function cmd(d, c) {
+        if(!pA || !pB) return;
         if(d === 'A') c==='play'?pA.playVideo():pA.stopVideo(); else c==='play'?pB.playVideo():pB.stopVideo();
         send({type: 'cmd'+d, cmd: c});
     }
