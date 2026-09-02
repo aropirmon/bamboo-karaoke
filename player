@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Bamboo Player (JANGAN DITUTUP)</title>
+<style>
+    body { background:#000; color:#4caf50; font-family: monospace; font-size: 13px; margin:0; padding:20px; }
+    b { color:#ff003c; }
+</style>
+</head>
+<body>
+<b>JANGAN DITUTUP TAB INI.</b><br><br>
+Ini adalah sumber audio untuk mixer.<br>
+Saat browser meminta pilih tab untuk dibagikan, <b>pilih tab ini</b> ("Bamboo Player") lalu centang "Bagikan audio tab".<br><br>
+Status YouTube API: <span id="st">memuat...</span>
+<div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+    window.pA = null;
+    window.pB = null;
+    window.ytReady = false;
+    function onYouTubeIframeAPIReady() {
+        window.pA = new YT.Player('pA', { height:'0', width:'0', playerVars:{ controls:0 }});
+        window.pB = new YT.Player('pB', { height:'0', width:'0', playerVars:{ controls:0 }});
+        window.ytReady = true;
+        document.getElementById('st').innerText = 'siap';
+    }
+</script>
+</body>
+</html>
