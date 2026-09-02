@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Bamboo DJ — Remote Pro</title>
+    <title>Bamboo DJ — Pro Command</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Jost:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
@@ -13,38 +13,33 @@
         .wrapper { display: flex; flex-direction: column; height: 100%; gap: 5px; }
 
         header { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #111; border-radius: 8px; border: 1px solid #222; }
-        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); margin:0; }
+        .logo { font-family: 'Alex Brush'; font-size: 24px; color: #fff; text-shadow: 0 0 10px var(--neon); }
         .mode-btn { background: var(--gold); color: #000; border: none; padding: 6px 12px; border-radius: 5px; font-weight: 800; cursor: pointer; font-size: 10px; }
-        .mode-btn.sw { background: #444; color: #fff; }
         .led { width: 8px; height: 8px; border-radius: 50%; background: #ff003c; display: inline-block; margin-left: 5px; }
         .led.on { background: #4caf50; box-shadow: 0 0 10px #4caf50; }
 
         .wave-section { height: 80px; background: #000; border: 1px solid #333; border-radius: 10px; position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 2px; }
-        .wave-lane { position: relative; flex: 1; overflow: hidden; }
+        .wave-lane { position: relative; flex: 1; overflow: hidden; background: rgba(255,255,255,0.02); }
         .grid { position: absolute; top: 0; height: 100%; width: 20000px; background-image: linear-gradient(90deg, var(--gold) 1px, transparent 1px); background-size: 60px 100%; left: 50%; will-change: transform; }
         .needle { position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #fff; z-index: 10; }
 
         .main-engine { display: grid; grid-template-columns: 1fr 300px 1fr; gap: 8px; flex: 1; min-height: 0; }
-        @media (max-width: 850px) {
-            .main-engine { display: flex; flex-direction: column; overflow-y: auto; }
-            .mixer { width: 100% !important; min-height: 480px; order: 2; margin: 10px 0; }
-            .deck { min-height: 320px; }
-        }
+        @media (max-width: 850px) { .main-engine { display: flex; flex-direction: column; overflow-y: auto; } .mixer { width: 100% !important; min-height: 480px; } }
 
         .deck { background: var(--card); border: 1px solid #222; border-radius: 15px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
         .bpm-num { font-size: 32px; font-weight: 800; color: var(--gold); }
         .rem-time { font-family: monospace; font-size: 16px; color: var(--neon); background: #000; padding: 4px 8px; border-radius: 4px; border: 1px solid #333; }
 
-        input[type=text] { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 8px; font-size: 11px; }
-        .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        input { width: 100%; background: #000; border: 1px solid #333; color: var(--gold); padding: 10px; border-radius: 8px; font-size: 11px; }
+        .btn { width: 100%; padding: 10px; border-radius: 6px; border: none; font-weight: 800; cursor: pointer; font-size: 11px; text-transform: uppercase; }
         .btn-play { background: #1a3a26; color: #4caf50; border: 1px solid #4caf50; }
-        .btn-stop { background: #331111; border: 1px solid #ff003c; border: 1px solid #ff003c; }
+        .btn-stop { background: #331111; color: #ff003c; border: 1px solid #ff003c; }
 
         .mixer { background: #080808; border: 1px solid var(--neon); border-radius: 15px; display: grid; grid-template-columns: 60px 1fr 60px; padding: 10px; position: relative; }
-        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
-        .hw-locked .shield { display: flex; }
+        .shield { position: absolute; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; border-radius: 15px; display: none; align-items: center; justify-content: center; text-align: center; color: var(--gold); font-size: 12px; font-weight: bold; }
+        .hw-mode .shield { display: flex; }
 
-        .fader-v-container { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .fader-v-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
         .fader-v { appearance: none; width: 120px; height: 5px; background: #222; transform: rotate(-90deg); margin: 60px -30px; outline: none; }
         .fader-v::-webkit-slider-thumb { appearance: none; width: 25px; height: 15px; background: var(--gold); border-radius: 2px; }
         
@@ -53,18 +48,18 @@
         .xfade { width: 90%; height: 40px; accent-color: var(--neon); margin-top: 15px; }
         .label { font-size: 8px; color: var(--gold); font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
         
-        #audio-setup { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #audio-init { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
 
-<div id="audio-setup">
+<div id="audio-init">
     <p class="logo" style="font-size: 60px;">Bamboo Terrace</p>
-    <button class="btn" style="background:var(--gold); color:black; width: 320px;" onclick="startAudioEngine()">INITIALIZE AUDIO & MIXER</button>
-    <p style="color:var(--gold); font-size: 10px; margin-top: 15px;">Wajib: Centang 'Bagikan Audio Tab' agar Equalizer Berfungsi</p>
+    <button class="btn" style="background:var(--gold); width: 320px;" onclick="startAudio()">INITIALIZE AUDIO & MIXER</button>
+    <p style="color:var(--gold); font-size: 10px; margin-top: 15px;">Wajib: Centang 'Bagikan Audio Tab'</p>
 </div>
 
-<div class="wrapper hw-locked" id="ui-container">
+<div class="wrapper hw-mode" id="ui-container">
     <div class="wave-section"><div class="needle"></div><div class="wave-lane"><div id="gridA" class="grid"></div></div><div class="wave-lane"><div id="gridB" class="grid"></div></div></div>
     <header><p class="logo">Bamboo Terrace</p><div class="mode-box"><button id="mBtn" class="mode-btn" onclick="toggleM()">MODE: PIONEER RX3</button><div style="font-size:9px; margin-left:10px;">TV STATUS <div id="tvL" class="led"></div></div></div></header>
     <div class="main-engine">
@@ -75,16 +70,16 @@
             <div style="display:flex; gap:5px"><button class="btn" style="background:#222; color:var(--gold); font-size:9px; flex:1;" onclick="syncV('A')">SYNC VIDEO</button><button id="ccA" class="btn" style="background:#222; color:white; flex:1; font-size:9px;" onclick="toggleCC('A')">CC OFF</button></div>
         </div>
         <div class="mixer">
-            <div class="shield">HARDWARE CONTROL ACTIVE</div>
-            <div class="fader-v-container"><span class="label">VOL 1</span><input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="upVol('A', this.value)"></div>
+            <div class="shield">PIONEER RX3 ACTIVE</div>
+            <div class="fader-v-wrap"><span class="label">VOL 1</span><input type="range" class="fader-v" id="volA" min="0" max="100" value="100" oninput="upVol('A', this.value)"></div>
             <div class="eq-stack">
-                <span class="label">HI</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="setEQ('hi', this.value)">
+                <span class="label">HI</span><input type="range" class="eq-knob" id="hi" min="-20" max="20" value="0" oninput="setEQ('high', this.value)">
                 <span class="label">MID</span><input type="range" class="eq-knob" id="mi" min="-20" max="20" value="0" oninput="setEQ('mid', this.value)">
                 <span class="label">LOW</span><input type="range" class="eq-knob" id="lo" min="-20" max="20" value="0" oninput="setEQ('low', this.value)">
                 <span class="label" style="color:var(--neon)">V-KILL</span><input type="range" class="eq-knob" id="vk" min="0" max="100" value="0" oninput="setEQ('vocal', this.value)">
                 <input type="range" class="xfader" id="xf" min="0" max="100" value="50" oninput="upXF(this.value)">
             </div>
-            <div class="fader-v-container"><span class="label">VOL 2</span><input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="upVol('B', this.value)"></div>
+            <div class="fader-v-wrap"><span class="label">VOL 2</span><input type="range" class="fader-v" id="volB" min="0" max="100" value="100" oninput="upVol('B', this.value)"></div>
         </div>
         <div class="deck">
             <div style="display:flex; justify-content:space-between; align-items:center;"><div class="bpm-num">124.0</div><div class="rem-time" id="remB">-00:00</div><span class="label">DECK 2</span></div>
@@ -95,37 +90,82 @@
     </div>
 </div>
 <div style="display:none;"><div id="pA"></div><div id="pB"></div></div>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
     const peer = new Peer();
-    let conn, pA, pB, mode = 'hw';
-    let audioCtx, lowF, midF, hiF, invR, invL;
-    const TARGET = 'bamboo-terrace-aropirmon-final';
+    let conn, pA, pB, mode = 'hw', audioCtx, lowF, midF, hiF, invR, invL;
+    let ccOnA = false, ccOnB = false;
+    const TARGET = 'bamboo-terrace-v10-aropirmon';
 
-    peer.on('open', () => {
+    function connectTV() {
         conn = peer.connect(TARGET);
         conn.on('open', () => document.getElementById('tvL').className = 'led on');
-    });
+        conn.on('close', () => {
+            document.getElementById('tvL').className = 'led';
+            setTimeout(connectTV, 2000);
+        });
+        conn.on('error', () => {
+            document.getElementById('tvL').className = 'led';
+            setTimeout(connectTV, 2000);
+        });
+    }
 
-    async function startAudioEngine() {
+    peer.on('open', () => connectTV());
+    peer.on('disconnected', () => peer.reconnect());
+
+    async function startAudio() {
         try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ audio: true, video: true });
-            document.getElementById('audio-setup').style.display = 'none';
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const supported = navigator.mediaDevices.getSupportedConstraints();
+            const displayMediaOptions = {
+                video: { displaySurface: 'browser' },
+                preferCurrentTab: true,
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false
+                }
+            };
+            // Ini kuncinya: tanpa suppressLocalAudioPlayback, audio asli dari tab
+            // tetap keluar langsung ke speaker BERBARENGAN dengan audio yang sudah
+            // diproses EQ/V-KILL — jadi efeknya seperti tidak berfungsi (tertimpa
+            // suara asli yang belum diproses).
+            if (supported.suppressLocalAudioPlayback) {
+                displayMediaOptions.audio.suppressLocalAudioPlayback = true;
+            }
+            const stream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
+
+            const suppressed = stream.getAudioTracks()[0] &&
+                stream.getAudioTracks()[0].getSettings().suppressLocalAudioPlayback;
+            if (!suppressed) {
+                alert("PERINGATAN: Browser ini tidak mendukung peredam audio asli.\nAnda akan dengar audio asli DAN audio olahan EQ bersamaan (dobel). Gunakan Chrome versi terbaru dan pastikan memilih 'Tab Ini' (bukan Jendela/Layar) saat berbagi.");
+            }
+            // Video capture tidak dipakai sama sekali, matikan agar hemat resource
+            stream.getVideoTracks().forEach(t => t.stop());
+
+            document.getElementById('audio-init').style.display = 'none';
+            audioCtx = new AudioContext();
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
             const source = audioCtx.createMediaStreamSource(stream);
+            
+            // Compressor/Limiter agar tidak ndenging
+            const limiter = audioCtx.createDynamicsCompressor();
+            limiter.threshold.value = -12; limiter.knee.value = 30; limiter.ratio.value = 12;
+
             lowF = audioCtx.createBiquadFilter(); lowF.type = 'lowshelf'; lowF.frequency.value = 320;
             midF = audioCtx.createBiquadFilter(); midF.type = 'peaking'; midF.frequency.value = 1000; midF.Q.value = 1;
             hiF = audioCtx.createBiquadFilter(); hiF.type = 'highshelf'; hiF.frequency.value = 3200;
+            
             const splitter = audioCtx.createChannelSplitter(2);
             const merger = audioCtx.createChannelMerger(2);
             invR = audioCtx.createGain(); invL = audioCtx.createGain();
             invR.gain.value = 0; invL.gain.value = 0;
-            source.connect(lowF); lowF.connect(midF); midF.connect(hiF); hiF.connect(splitter);
+
+            source.connect(lowF); lowF.connect(midF); midF.connect(hiF); hiF.connect(limiter);
+            limiter.connect(splitter);
             splitter.connect(merger, 0, 0); splitter.connect(invR, 1); invR.connect(merger, 0, 0);
             splitter.connect(merger, 1, 1); splitter.connect(invL, 0); invL.connect(merger, 0, 1);
             merger.connect(audioCtx.destination);
-        } catch(e) { alert("Wajib share audio agar EQ aktif!"); }
+        } catch(e) { alert("Pilih Tab Ini & Centang Share Audio!"); }
     }
 
     function setEQ(type, val) {
@@ -171,24 +211,18 @@
         if(d === 'A') c==='play'?pA.playVideo():pA.stopVideo(); else c==='play'?pB.playVideo():pB.stopVideo();
         send({type: 'cmd'+d, cmd: c});
     }
-    function toggleM() {
-        mode = (mode === 'hw') ? 'sw' : 'hw';
-        document.getElementById('ui-container').className = (mode === 'hw') ? 'wrapper hw-locked' : 'wrapper';
-        document.getElementById('mBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE';
-        document.getElementById('mBtn').className = (mode === 'hw') ? 'mode-btn' : 'mode-btn sw';
+    function toggleM() { mode = (mode === 'hw') ? 'sw' : 'hw'; document.getElementById('ui-container').className = (mode === 'hw') ? 'wrapper hw-mode' : 'wrapper'; document.getElementById('mBtn').innerText = (mode === 'hw') ? 'MODE: PIONEER RX3' : 'MODE: SMART REMOTE'; }
+    function toggleCC(deck) {
+        const isA = deck === 'A';
+        const nextState = isA ? !ccOnA : !ccOnB;
+        if (isA) ccOnA = nextState; else ccOnB = nextState;
+        send({type: 'cc', deck: deck, state: nextState});
+        document.getElementById('cc' + deck).innerText = nextState ? 'CC ON' : 'CC OFF';
     }
     function formatT(s) { const m = Math.floor(s/60); const sec = Math.floor(s%60); return m + ":" + (sec < 10 ? '0' : '') + sec; }
     setInterval(() => {
-        if(pA && pA.getCurrentTime) {
-            const durA = pA.getDuration(); const curA = pA.getCurrentTime();
-            document.getElementById('remA').innerText = "-" + formatT(durA - curA);
-            document.getElementById('gridA').style.transform = `translateX(-${(curA*60)%1000}px)`;
-        }
-        if(pB && pB.getCurrentTime) {
-            const durB = pB.getDuration(); const curB = pB.getCurrentTime();
-            document.getElementById('remB').innerText = "-" + formatT(durB - curB);
-            document.getElementById('gridB').style.transform = `translateX(-${(curB*60)%1000}px)`;
-        }
+        if(pA && pA.getCurrentTime) { document.getElementById('remA').innerText = "-" + formatT(pA.getDuration() - pA.getCurrentTime()); document.getElementById('gridA').style.transform = `translateX(-${(pA.getCurrentTime()*60)%1000}px)`; }
+        if(pB && pB.getCurrentTime) { document.getElementById('remB').innerText = "-" + formatT(pB.getDuration() - pB.getCurrentTime()); document.getElementById('gridB').style.transform = `translateX(-${(pB.getCurrentTime()*60)%1000}px)`; }
     }, 100);
     function send(data) { if(conn && conn.open) conn.send(data); }
 </script>
