@@ -44,7 +44,13 @@
         playerA = new YT.Player('playerA', cfg); playerB = new YT.Player('playerB', cfg);
     }
 
-    function start() { document.documentElement.requestFullscreen(); document.getElementById('init').style.display='none'; document.getElementById('deckA').style.opacity=1; }
+    function start() {
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen(); // Safari lama/iPad
+        document.getElementById('init').style.display='none';
+        document.getElementById('deckA').style.opacity=1;
+    }
 
     let activeConn = null;
     const connStatEl = () => document.getElementById('connStat');
